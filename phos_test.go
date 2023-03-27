@@ -19,9 +19,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSingleHandler(t *testing.T) {
@@ -128,15 +129,20 @@ func TestHandlersWithZeroAndErrHandleFuncOption(t *testing.T) {
 	assert.Equal(t, "plus one error", res3.Err.Error())
 }
 
+// TODO: fix data race
 func TestHandlersWithTimeout(t *testing.T) {
-	ph := New[int](2)
-	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithSleep, plusOne)
-	ph.In <- 1
-	res1 := <-ph.Out
-	fmt.Println(res1)
-	ph.In <- 2
-	res2 := <-ph.Out
-	fmt.Println(res2)
+	for i := 0; i < 10; i++ {
+		ph := New[int](0)
+		ph.Handlers = append(ph.Handlers, plusOne, plusOneWithSleep, plusOne)
+		ph.In <- 10
+		res1 := <-ph.Out
+		fmt.Println(res1)
+		fmt.Println()
+		ph.In <- 30
+		res2 := <-ph.Out
+		fmt.Println(res2)
+		fmt.Println()
+	}
 }
 
 func plusOne(_ context.Context, data int) (int, error) {

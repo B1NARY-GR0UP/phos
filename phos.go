@@ -52,12 +52,11 @@ func New[T any](cap int, opts ...Option) *Phos[T] {
 	return ph
 }
 
-// handle core function of PHOS
 func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {
 	ctx := ph.options.Ctx
-	notifier := make(chan struct{})
 	for {
 	NEXT:
+		notifier := make(chan struct{})
 		select {
 		case data := <-in:
 			timer := time.NewTimer(ph.options.Timeout)
@@ -86,6 +85,7 @@ func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {
 				ph.options.DefaultFunc(ctx)
 			}
 		}
+		close(notifier)
 	}
 }
 
@@ -97,13 +97,13 @@ func (ph *Phos[T]) executeHandlers(ctx context.Context, data T, out chan Result[
 			if ph.options.ErrHandleFunc != nil {
 				data = ph.options.ErrHandleFunc(ctx, data, err).(T)
 			}
-			ph.launch(out, data, handleError(err))
 			notifier <- struct{}{}
+			ph.launch(out, data, handleError(err))
 			return
 		}
 	}
-	ph.launch(out, data, nil)
 	notifier <- struct{}{}
+	ph.launch(out, data, nil)
 }
 
 func (ph *Phos[T]) launch(out chan Result[T], data T, err *Error) {

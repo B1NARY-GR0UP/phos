@@ -102,12 +102,12 @@ func (ph *Phos[T]) executeHandlers(ctx context.Context, data T, out chan Result[
 			return
 		}
 	}
-	ph.launch(out, data, nilError())
+	ph.launch(out, data, nil)
 	notifier <- struct{}{}
 }
 
 func (ph *Phos[T]) launch(out chan Result[T], data T, err *Error) {
-	if ph.options.Zero && err.Type != Nil {
+	if ph.options.Zero && err != nil {
 		var zero T
 		out <- Result[T]{
 			Data: zero,

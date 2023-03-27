@@ -31,7 +31,7 @@ func (e *Error) Error() string {
 type ErrorType uint64
 
 const (
-	Nil ErrorType = iota
+	_ ErrorType = iota
 	TimeoutErr
 	HandleErr
 	CtxErr
@@ -42,10 +42,6 @@ func newError(err error, t ErrorType) *Error {
 		Err:  err,
 		Type: t,
 	}
-}
-
-func nilError() *Error {
-	return newError(nil, Nil)
 }
 
 func timeoutError() *Error {

@@ -17,19 +17,16 @@ package phos
 
 import (
 	"context"
+	"time"
 )
 
 // Phos short for Phosphophyllite
 // PHOS is a channel with internal handler chain
 type Phos[T any] struct {
-	// In read data from users
-	In chan<- T
-	// Out write data to users
-	Out <-chan Result[T]
-	// Handlers is the handler chain
+	In       chan<- T
+	Out      <-chan Result[T]
 	Handlers []Handler[T]
-	// options for PHOS
-	options *Options
+	options  *Options
 }
 
 // Handler handles the data of channel
@@ -37,14 +34,11 @@ type Handler[T any] func(ctx context.Context, data T) (T, error)
 
 // Result PHOS output result
 type Result[T any] struct {
-	Data    T
-	Err     error
-	Timeout bool
+	Data T
+	Err  *Error
 }
 
 // New PHOS channel
-// TODO: support async handle?
-// TODO: support channel status?
 func New[T any](cap int, opts ...Option) *Phos[T] {
 	options := NewOptions(opts...)
 	in := make(chan T, cap)
@@ -58,30 +52,35 @@ func New[T any](cap int, opts ...Option) *Phos[T] {
 	return ph
 }
 
+// handle core function of PHOS
 func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {
 	ctx := ph.options.Ctx
+	notifier := make(chan struct{})
 	for {
 	NEXT:
 		select {
 		case data := <-in:
-			var err error
-			// TODO: handle timeout
-			for _, handler := range ph.Handlers {
-				data, err = handler(ctx, data)
-				if err != nil {
-					if ph.options.ErrHandleFunc != nil {
-						ph.options.ErrHandleFunc(ctx, data, err)
-					}
-					if ph.options.Zero {
-						// TODO: consider the case of there is a timeout and an exception
-						ph.zero(out, err, false)
-					} else {
-						ph.value(out, data, err, false)
-					}
-					goto NEXT
+			timer := time.NewTimer(ph.options.Timeout)
+			go ph.executeHandlers(ctx, data, out, notifier)
+			select {
+			case <-timer.C:
+				timer.Stop()
+				if ph.options.ErrTimeoutFunc != nil {
+					data = ph.options.ErrTimeoutFunc(ctx, data).(T)
 				}
+				ph.launch(out, data, timeoutError())
+				goto NEXT
+			case <-notifier:
+				timer.Stop()
+				goto NEXT
+			case <-ctx.Done():
+				timer.Stop()
+				if ph.options.CtxDoneFunc != nil {
+					data = ph.options.CtxDoneFunc(ctx, data).(T)
+				}
+				ph.launch(out, data, ctxError(ctx.Err()))
+				goto NEXT
 			}
-			ph.value(out, data, err, false)
 		default:
 			if ph.options.DefaultFunc != nil {
 				ph.options.DefaultFunc(ctx)
@@ -90,19 +89,34 @@ func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {
 	}
 }
 
-func (ph *Phos[T]) zero(out chan Result[T], err error, timeout bool) {
-	var zero T
-	out <- Result[T]{
-		Data:    zero,
-		Err:     err,
-		Timeout: timeout,
+func (ph *Phos[T]) executeHandlers(ctx context.Context, data T, out chan Result[T], notifier chan struct{}) {
+	var err error
+	for _, handler := range ph.Handlers {
+		data, err = handler(ctx, data)
+		if err != nil {
+			if ph.options.ErrHandleFunc != nil {
+				data = ph.options.ErrHandleFunc(ctx, data, err).(T)
+			}
+			ph.launch(out, data, handleError(err))
+			notifier <- struct{}{}
+			return
+		}
 	}
+	ph.launch(out, data, nilError())
+	notifier <- struct{}{}
 }
 
-func (ph *Phos[T]) value(out chan Result[T], data T, err error, timeout bool) {
-	out <- Result[T]{
-		Data:    data,
-		Err:     err,
-		Timeout: timeout,
+func (ph *Phos[T]) launch(out chan Result[T], data T, err *Error) {
+	if ph.options.Zero && err.Type != Nil {
+		var zero T
+		out <- Result[T]{
+			Data: zero,
+			Err:  err,
+		}
+	} else {
+		out <- Result[T]{
+			Data: data,
+			Err:  err,
+		}
 	}
 }

@@ -27,6 +27,7 @@ var defaultOptions = Options{
 	Timeout:        time.Second * 3,
 	ErrHandleFunc:  nil,
 	ErrTimeoutFunc: nil,
+	CtxDoneFunc:    nil,
 	DefaultFunc:    nil,
 }
 
@@ -40,12 +41,14 @@ type Options struct {
 	Timeout        time.Duration
 	ErrHandleFunc  ErrHandlerFunc
 	ErrTimeoutFunc ErrTimeoutFunc
+	CtxDoneFunc    CtxDoneFunc
 	DefaultFunc    DefaultFunc
 }
 
 type (
-	ErrHandlerFunc func(ctx context.Context, data any, err error)
-	ErrTimeoutFunc func(ctx context.Context, data any)
+	ErrHandlerFunc func(ctx context.Context, data any, err error) any
+	ErrTimeoutFunc func(ctx context.Context, data any) any
+	CtxDoneFunc    func(ctx context.Context, data any) any
 	DefaultFunc    func(ctx context.Context)
 )
 
@@ -57,6 +60,7 @@ func NewOptions(opts ...Option) *Options {
 		Timeout:        defaultOptions.Timeout,
 		ErrHandleFunc:  defaultOptions.ErrHandleFunc,
 		ErrTimeoutFunc: defaultOptions.ErrTimeoutFunc,
+		CtxDoneFunc:    defaultOptions.CtxDoneFunc,
 		DefaultFunc:    defaultOptions.DefaultFunc,
 	}
 	options.apply(opts...)
@@ -90,21 +94,29 @@ func WithTimeout(timeout time.Duration) Option {
 	}
 }
 
-// WithErrHandleFunc will set error handle function which will be called when error happened
+// WithErrHandleFunc will set error handle function for PHOS which will be called when error happened
 func WithErrHandleFunc(fn ErrHandlerFunc) Option {
 	return func(o *Options) {
 		o.ErrHandleFunc = fn
 	}
 }
 
-// WithErrTimeoutFunc will set error timeout function which will be called when timeout happened
+// WithErrTimeoutFunc will set error timeout function for PHOS which will be called when timeout happened
 func WithErrTimeoutFunc(fn ErrTimeoutFunc) Option {
 	return func(o *Options) {
 		o.ErrTimeoutFunc = fn
 	}
 }
 
-// WithDefaultFunc will set default function which will be called when no data in channel
+// WithCtxDoneFunc will set ctx done function for PHOS which will be called when ctx done during data handling
+// Note: you should use it will WithContext, otherwise it will not work
+func WithCtxDoneFunc(fn CtxDoneFunc) Option {
+	return func(o *Options) {
+		o.CtxDoneFunc = fn
+	}
+}
+
+// WithDefaultFunc will set default function for PHOS which will be called when no data in channel
 func WithDefaultFunc(fn DefaultFunc) Option {
 	return func(o *Options) {
 		o.DefaultFunc = fn

@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 )
 
 func handlePlusOne(ctx context.Context, data int) (int, error) {
@@ -37,8 +38,12 @@ func handleMulti3(ctx context.Context, data int) (int, error) {
 	return data * 3, nil
 }
 
+func errHandle(ctx context.Context, data any, err error) any {
+	return 520
+}
+
 func TestFeasibility(t *testing.T) {
-	ph := New[int](1)
+	ph := New[int](1, WithTimeout(time.Minute*30))
 	ph.Handlers = append(ph.Handlers, handleMulti3)
 	ph.In <- 13
 	res, ok := <-ph.Out
@@ -73,7 +78,7 @@ func TestSingleHandlerErrWithZero(t *testing.T) {
 }
 
 func TestMultiHandlerErr(t *testing.T) {
-	ph := New[int](3)
+	ph := New[int](3, WithErrHandleFunc(errHandle))
 	ph.Handlers = append(ph.Handlers, handlePlusOneWithErr, handlePlusOne, handlePlusOne)
 	ph.In <- 1 // 1 + 111
 	ph.In <- 2 // 2 + 1 + 1 + 1
@@ -81,4 +86,19 @@ func TestMultiHandlerErr(t *testing.T) {
 	fmt.Println(<-ph.Out)
 	fmt.Println(<-ph.Out)
 	fmt.Println(<-ph.Out)
+}
+
+func TestHandleWithTimeout(t *testing.T) {
+	// handle 处理过程中不会触发超时
+	for {
+		select {
+		case <-time.After(time.Second * 5):
+			fmt.Println("timeout!")
+		default:
+			fmt.Println("begin handle")
+			time.Sleep(time.Second * 10)
+			fmt.Println("finish handle")
+			return
+		}
+	}
 }

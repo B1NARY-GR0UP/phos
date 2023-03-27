@@ -19,86 +19,139 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"testing"
 	"time"
 )
 
-func handlePlusOne(ctx context.Context, data int) (int, error) {
-	return data + 1, nil
-}
-
-func handlePlusOneWithErr(ctx context.Context, data int) (int, error) {
-	if data == 1 {
-		return data + 111, errors.New("plus one error")
-	}
-	return data + 1, nil
-}
-
-func handleMulti3(ctx context.Context, data int) (int, error) {
-	return data * 3, nil
-}
-
-func errHandle(ctx context.Context, data any, err error) any {
-	return 520
-}
-
-func TestFeasibility(t *testing.T) {
-	ph := New[int](1, WithTimeout(time.Minute*30))
-	ph.Handlers = append(ph.Handlers, handleMulti3)
-	ph.In <- 13
-	res, ok := <-ph.Out
-	fmt.Println(res, ok)
+func TestSingleHandler(t *testing.T) {
+	ph := New[int](0)
+	ph.Handlers = append(ph.Handlers, plusOne)
+	ph.In <- 0
+	res := <-ph.Out
+	assert.Equal(t, 1, res.Data)
+	assert.Nil(t, res.Err)
 }
 
 func TestMultiHandlers(t *testing.T) {
 	ph := New[int](3)
-	ph.Handlers = append(ph.Handlers, handlePlusOne, handlePlusOne, handlePlusOne)
+	ph.Handlers = append(ph.Handlers, plusOne, plusOne, plusOne)
+	ph.In <- 1 // 1 + 1 + 1 + 1 = 4
+	ph.In <- 2 // 2 + 1 + 1 + 1 = 5
+	ph.In <- 3 // 3 + 1 + 1 + 1 = 6
+	res1 := <-ph.Out
+	res2 := <-ph.Out
+	res3 := <-ph.Out
+	assert.Equal(t, 4, res1.Data)
+	assert.Equal(t, 5, res2.Data)
+	assert.Equal(t, 6, res3.Data)
+	assert.Nil(t, res1.Err)
+	assert.Nil(t, res2.Err)
+	assert.Nil(t, res3.Err)
+}
+
+func TestHandlersWithErr(t *testing.T) {
+	ph := New[int](3)
+	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithErr, plusOne)
+	// Note:
+	// The last handler will not be executed because of the error
+	ph.In <- 1 // 1 + 111 + 1 = 113
+	ph.In <- 2 // 2 + 111 + 1 = 114
+	ph.In <- 3 // 3 + 111 + 1 = 115
+	res1 := <-ph.Out
+	res2 := <-ph.Out
+	res3 := <-ph.Out
+	assert.Equal(t, 113, res1.Data)
+	assert.Equal(t, 114, res2.Data)
+	assert.Equal(t, 115, res3.Data)
+	assert.Equal(t, "plus one error", res1.Err.Error())
+	assert.Equal(t, "plus one error", res2.Err.Error())
+	assert.Equal(t, "plus one error", res3.Err.Error())
+}
+
+func TestHandlersWithZeroOption(t *testing.T) {
+	// Note:
+	// WithZero will make the result of the handler with error to be zero value of the type
+	ph := New[int](3, WithZero())
+	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithErr, plusOne)
 	ph.In <- 1
 	ph.In <- 2
 	ph.In <- 3
-	fmt.Println(<-ph.Out)
-	fmt.Println(<-ph.Out)
-	fmt.Println(<-ph.Out)
+	res1 := <-ph.Out
+	res2 := <-ph.Out
+	res3 := <-ph.Out
+	assert.Equal(t, 0, res1.Data)
+	assert.Equal(t, 0, res2.Data)
+	assert.Equal(t, 0, res3.Data)
+	assert.Equal(t, "plus one error", res1.Err.Error())
+	assert.Equal(t, "plus one error", res2.Err.Error())
+	assert.Equal(t, "plus one error", res3.Err.Error())
 }
 
-func TestSingleHandlerErr(t *testing.T) {
-	ph := New[int](3)
-	ph.Handlers = append(ph.Handlers, handlePlusOneWithErr)
-	ph.In <- 1
-	fmt.Println(<-ph.Out)
+func TestHandlersWithErrHandleFuncOption(t *testing.T) {
+	// Note:
+	// WithErrHandleFunc will make the result of the handler with error to be the return value of the errHandleFunc
+	ph := New[int](3, WithErrHandleFunc(plusSixSixSix))
+	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithErr, plusOne)
+	ph.In <- 1 // 1 + 1 + 111 + 666 = 779
+	ph.In <- 2 // 2 + 1 + 111 + 666 = 780
+	ph.In <- 3 // 3 + 1 + 111 + 666 = 781
+	res1 := <-ph.Out
+	res2 := <-ph.Out
+	res3 := <-ph.Out
+	assert.Equal(t, 779, res1.Data)
+	assert.Equal(t, 780, res2.Data)
+	assert.Equal(t, 781, res3.Data)
+	assert.Equal(t, "plus one error", res1.Err.Error())
+	assert.Equal(t, "plus one error", res2.Err.Error())
+	assert.Equal(t, "plus one error", res3.Err.Error())
 }
 
-func TestSingleHandlerErrWithZero(t *testing.T) {
-	ph := New[int](3, WithZero())
-	ph.Handlers = append(ph.Handlers, handlePlusOneWithErr)
+func TestHandlersWithZeroAndErrHandleFuncOption(t *testing.T) {
+	// Note:
+	// When WithZero and WithErrHandleFunc were enabled at the same time,
+	// WithZero will overwrite the result of the WithErrHandleFunc option, that is,
+	// the outputs will be the zero value of the appropriate type when error occur
+	ph := New[int](3, WithZero(), WithErrHandleFunc(plusSixSixSix))
+	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithErr, plusOne)
 	ph.In <- 1
 	ph.In <- 2
-	fmt.Println(<-ph.Out)
-	fmt.Println(<-ph.Out)
+	ph.In <- 3
+	res1 := <-ph.Out
+	res2 := <-ph.Out
+	res3 := <-ph.Out
+	assert.Equal(t, 0, res1.Data)
+	assert.Equal(t, 0, res2.Data)
+	assert.Equal(t, 0, res3.Data)
+	assert.Equal(t, "plus one error", res1.Err.Error())
+	assert.Equal(t, "plus one error", res2.Err.Error())
+	assert.Equal(t, "plus one error", res3.Err.Error())
 }
 
-func TestMultiHandlerErr(t *testing.T) {
-	ph := New[int](3, WithErrHandleFunc(errHandle))
-	ph.Handlers = append(ph.Handlers, handlePlusOneWithErr, handlePlusOne, handlePlusOne)
-	ph.In <- 1 // 1 + 111
-	ph.In <- 2 // 2 + 1 + 1 + 1
-	ph.In <- 3 // 3 + 1 + 1 + 1
-	fmt.Println(<-ph.Out)
-	fmt.Println(<-ph.Out)
-	fmt.Println(<-ph.Out)
+func TestHandlersWithTimeout(t *testing.T) {
+	ph := New[int](2)
+	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithSleep, plusOne)
+	ph.In <- 1
+	res1 := <-ph.Out
+	fmt.Println(res1)
+	ph.In <- 2
+	res2 := <-ph.Out
+	fmt.Println(res2)
 }
 
-func TestHandleWithTimeout(t *testing.T) {
-	// handle 处理过程中不会触发超时
-	for {
-		select {
-		case <-time.After(time.Second * 5):
-			fmt.Println("timeout!")
-		default:
-			fmt.Println("begin handle")
-			time.Sleep(time.Second * 10)
-			fmt.Println("finish handle")
-			return
-		}
-	}
+func plusOne(_ context.Context, data int) (int, error) {
+	return data + 1, nil
+}
+
+func plusOneWithErr(_ context.Context, data int) (int, error) {
+	return data + 111, errors.New("plus one error")
+}
+
+func plusSixSixSix(_ context.Context, data any, err error) any {
+	return data.(int) + 666
+}
+
+func plusOneWithSleep(_ context.Context, data int) (int, error) {
+	time.Sleep(time.Second * 5)
+	return data + 1, nil
 }

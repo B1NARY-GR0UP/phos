@@ -14,3 +14,54 @@
 //
 
 package phos
+
+import (
+	"context"
+	"fmt"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestOptions(t *testing.T) {
+	errHandleFunc := func(ctx context.Context, data any, err error) any {
+		return nil
+	}
+	errTimeoutFunc := func(ctx context.Context, data any) any {
+		return nil
+	}
+	ctxDoneFunc := func(ctx context.Context, data any) any {
+		return nil
+	}
+	defaultFunc := func(ctx context.Context) {
+		return
+	}
+	options := newOptions(
+		WithContext(context.TODO()),
+		WithZero(),
+		WithTimeout(time.Second*5),
+		WithErrHandleFunc(errHandleFunc),
+		WithErrTimeoutFunc(errTimeoutFunc),
+		WithCtxDoneFunc(ctxDoneFunc),
+		WithDefaultFunc(defaultFunc),
+	)
+	assert.Equal(t, context.TODO(), options.Ctx)
+	assert.True(t, options.Zero)
+	assert.Equal(t, time.Second*5, options.Timeout)
+	assert.Equal(t, fmt.Sprintf("%p", errHandleFunc), fmt.Sprintf("%p", options.ErrHandleFunc))
+	assert.Equal(t, fmt.Sprintf("%p", errTimeoutFunc), fmt.Sprintf("%p", options.ErrTimeoutFunc))
+	assert.Equal(t, fmt.Sprintf("%p", ctxDoneFunc), fmt.Sprintf("%p", options.CtxDoneFunc))
+	assert.Equal(t, fmt.Sprintf("%p", defaultFunc), fmt.Sprintf("%p", options.DefaultFunc))
+}
+
+func TestDefaultOptions(t *testing.T) {
+	options := newOptions()
+	assert.Equal(t, context.Background(), options.Ctx)
+	assert.False(t, options.Zero)
+	assert.Equal(t, time.Second*3, options.Timeout)
+	assert.Nil(t, options.ErrHandleFunc)
+	assert.Nil(t, options.ErrTimeoutFunc)
+	assert.Nil(t, options.CtxDoneFunc)
+	assert.Nil(t, options.DefaultFunc)
+}

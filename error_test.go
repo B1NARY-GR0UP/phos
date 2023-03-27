@@ -14,3 +14,25 @@
 //
 
 package phos
+
+import (
+	"errors"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestNewError(t *testing.T) {
+	// TimeoutError
+	timeoutErr := timeoutError()
+	assert.Equal(t, TimeoutErr, timeoutErr.Type)
+	assert.Equal(t, "phos error timeout", timeoutErr.Err.Error())
+	// HandleError
+	handleErr := handleError(errors.New("handle error"))
+	assert.Equal(t, HandleErr, handleErr.Type)
+	assert.Equal(t, "handle error", handleErr.Err.Error())
+	// CtxError
+	ctxErr := ctxError(errors.New("ctx error"))
+	assert.Equal(t, CtxErr, ctxErr.Type)
+	assert.Equal(t, "ctx error", ctxErr.Err.Error())
+}

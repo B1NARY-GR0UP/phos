@@ -29,7 +29,7 @@ type Phos[T any] struct {
 	options  *Options
 }
 
-// Handler handles the data of channel
+// Handler handles the data of PHOS channel
 type Handler[T any] func(ctx context.Context, data T) (T, error)
 
 // Result PHOS output result
@@ -40,7 +40,7 @@ type Result[T any] struct {
 
 // New PHOS channel
 func New[T any](cap int, opts ...Option) *Phos[T] {
-	options := NewOptions(opts...)
+	options := newOptions(opts...)
 	in := make(chan T, cap)
 	out := make(chan Result[T], cap)
 	ph := &Phos[T]{

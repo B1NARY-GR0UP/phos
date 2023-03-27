@@ -39,21 +39,21 @@ type Options struct {
 	Ctx            context.Context
 	Zero           bool
 	Timeout        time.Duration
-	ErrHandleFunc  ErrHandlerFunc
+	ErrHandleFunc  ErrHandleFunc
 	ErrTimeoutFunc ErrTimeoutFunc
 	CtxDoneFunc    CtxDoneFunc
 	DefaultFunc    DefaultFunc
 }
 
 type (
-	ErrHandlerFunc func(ctx context.Context, data any, err error) any
+	ErrHandleFunc  func(ctx context.Context, data any, err error) any
 	ErrTimeoutFunc func(ctx context.Context, data any) any
 	CtxDoneFunc    func(ctx context.Context, data any) any
 	DefaultFunc    func(ctx context.Context)
 )
 
-// NewOptions new options for PHOS
-func NewOptions(opts ...Option) *Options {
+// newOptions new options for PHOS
+func newOptions(opts ...Option) *Options {
 	options := &Options{
 		Ctx:            defaultOptions.Ctx,
 		Zero:           defaultOptions.Zero,
@@ -95,7 +95,7 @@ func WithTimeout(timeout time.Duration) Option {
 }
 
 // WithErrHandleFunc will set error handle function for PHOS which will be called when error happened
-func WithErrHandleFunc(fn ErrHandlerFunc) Option {
+func WithErrHandleFunc(fn ErrHandleFunc) Option {
 	return func(o *Options) {
 		o.ErrHandleFunc = fn
 	}
@@ -109,7 +109,7 @@ func WithErrTimeoutFunc(fn ErrTimeoutFunc) Option {
 }
 
 // WithCtxDoneFunc will set ctx done function for PHOS which will be called when ctx done during data handling
-// Note: you should use it will WithContext, otherwise it will not work
+// Note: You should use it will WithContext, otherwise it will not work
 func WithCtxDoneFunc(fn CtxDoneFunc) Option {
 	return func(o *Options) {
 		o.CtxDoneFunc = fn

@@ -17,6 +17,7 @@ package phos
 
 import (
 	"context"
+	"sync"
 	"time"
 )
 
@@ -26,6 +27,7 @@ type Phos[T any] struct {
 	In       chan<- T
 	Out      <-chan Result[T]
 	Handlers []Handler[T]
+	pool     sync.Pool
 	options  *Options
 }
 
@@ -48,6 +50,9 @@ func New[T any](cap int, opts ...Option) *Phos[T] {
 		Out:     out,
 		options: options,
 	}
+	ph.pool.New = func() any {
+		return make(chan struct{})
+	}
 	go ph.handle(in, out)
 	return ph
 }
@@ -56,9 +61,9 @@ func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {
 	ctx := ph.options.Ctx
 	for {
 	NEXT:
-		notifier := make(chan struct{})
 		select {
 		case data := <-in:
+			notifier := ph.pool.Get().(chan struct{})
 			timer := time.NewTimer(ph.options.Timeout)
 			go ph.executeHandlers(ctx, data, out, notifier)
 			select {
@@ -85,7 +90,6 @@ func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {
 				ph.options.DefaultFunc(ctx)
 			}
 		}
-		close(notifier)
 	}
 }
 
@@ -98,11 +102,13 @@ func (ph *Phos[T]) executeHandlers(ctx context.Context, data T, out chan Result[
 				data = ph.options.ErrHandleFunc(ctx, data, err).(T)
 			}
 			notifier <- struct{}{}
+			ph.pool.Put(notifier)
 			ph.launch(out, data, handleError(err))
 			return
 		}
 	}
 	notifier <- struct{}{}
+	ph.pool.Put(notifier)
 	ph.launch(out, data, nil)
 }
 

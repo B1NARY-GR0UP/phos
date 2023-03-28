@@ -18,7 +18,7 @@ package phos
 import (
 	"context"
 	"errors"
-	"fmt"
+	"log"
 	"testing"
 	"time"
 
@@ -131,17 +131,17 @@ func TestHandlersWithZeroAndErrHandleFuncOption(t *testing.T) {
 
 // TODO: fix data race
 func TestHandlersWithTimeout(t *testing.T) {
-	for i := 0; i < 10; i++ {
-		ph := New[int](0)
-		ph.Handlers = append(ph.Handlers, plusOne, plusOneWithSleep, plusOne)
+	ph := New[int](0)
+	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithSleep, plusOne)
+	for i := 0; i < 50; i++ {
 		ph.In <- 10
 		res1 := <-ph.Out
-		fmt.Println(res1)
-		fmt.Println()
+		log.Println(res1)
+		log.Println()
 		ph.In <- 30
 		res2 := <-ph.Out
-		fmt.Println(res2)
-		fmt.Println()
+		log.Println(res2)
+		log.Println()
 	}
 }
 

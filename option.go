@@ -109,6 +109,7 @@ func WithErrTimeoutFunc(fn ErrTimeoutFunc) Option {
 }
 
 // WithCtxDoneFunc will set ctx done function for PHOS which will be called when ctx done during data handling
+// used for emergency stop, terminate all operations and exit
 // Note: You should use it will WithContext, otherwise it will not work
 func WithCtxDoneFunc(fn CtxDoneFunc) Option {
 	return func(o *Options) {

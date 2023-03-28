@@ -15,20 +15,6 @@
 
 package main
 
-import (
-	"context"
-	"log"
-
-	"github.com/B1NARY-GR0UP/phos"
-)
-
 func main() {
-	ph := phos.New[int](0)
-	plusOne := func(ctx context.Context, data int) (int, error) {
-		return data + 1, nil
-	}
-	ph.Handlers = append(ph.Handlers, plusOne)
-	ph.In <- 0
-	res := <-ph.Out
-	log.Printf("res: %d", res.Data)
+
 }

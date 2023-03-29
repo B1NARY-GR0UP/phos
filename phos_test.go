@@ -28,26 +28,51 @@ func TestSingleHandler(t *testing.T) {
 	ph := New[int]()
 	ph.Handlers = append(ph.Handlers, plusOne)
 	ph.In <- 0
-	res, ok := <-ph.Out
+	res := <-ph.Out
 	assert.Equal(t, 1, res.Data)
-	assert.True(t, ok)
+	assert.True(t, res.OK)
 	assert.Nil(t, res.Err)
 }
 
-// TODO: 即使一次性输入的数据超出缓冲区大小，也不会阻塞
-// TODO: 如果取出的数据超出缓冲区大小，会阻塞而不是报错
+func TestClose(t *testing.T) {
+	ph := New[int]()
+	ph.Handlers = append(ph.Handlers, plusOne)
+	close(ph.In)
+	res := <-ph.Out
+	assert.Equal(t, 0, res.Data)
+	assert.False(t, res.OK)
+	assert.Nil(t, res.Err)
+}
+
+//func TestReceiveMore(t *testing.T) {
+//	ph := New[int]()
+//	ph.Handlers = append(ph.Handlers, plusOne)
+//	ph.In <- 1
+//	ph.In <- 2
+//	ph.In <- 3
+//	res1, ok1 := <-ph.Out
+//	res2, ok2 := <-ph.Out
+//	res3, ok3 := <-ph.Out
+//	fmt.Println(res1, ok1)
+//	fmt.Println(res2, ok2)
+//	fmt.Println(res3, ok3)
+//	// TODO: 判断是否接收的次数大于传入的次数有延迟，延迟时间等于 PHOS 超时时间
+//	res4, ok4 := <-ph.Out
+//	fmt.Println(res4, ok4)
+//}
+
 func TestMultiHandlers(t *testing.T) {
 	ph := New[int]()
 	ph.Handlers = append(ph.Handlers, plusOne, plusOne, plusOne)
 	ph.In <- 1 // 1 + 1 + 1 + 1 = 4
 	ph.In <- 2 // 2 + 1 + 1 + 1 = 5
 	ph.In <- 3 // 3 + 1 + 1 + 1 = 6
-	res1, ok1 := <-ph.Out
-	res2, ok2 := <-ph.Out
-	res3, ok3 := <-ph.Out
-	assert.True(t, ok1)
-	assert.True(t, ok2)
-	assert.True(t, ok3)
+	res1 := <-ph.Out
+	res2 := <-ph.Out
+	res3 := <-ph.Out
+	assert.True(t, res1.OK)
+	assert.True(t, res2.OK)
+	assert.True(t, res3.OK)
 	assert.Equal(t, 4, res1.Data)
 	assert.Equal(t, 5, res2.Data)
 	assert.Equal(t, 6, res3.Data)
@@ -64,15 +89,15 @@ func TestHandlersWithErr(t *testing.T) {
 	ph.In <- 1 // 1 + 111 + 1 = 113
 	ph.In <- 2 // 2 + 111 + 1 = 114
 	ph.In <- 3 // 3 + 111 + 1 = 115
-	res1, ok1 := <-ph.Out
-	res2, ok2 := <-ph.Out
-	res3, ok3 := <-ph.Out
+	res1 := <-ph.Out
+	res2 := <-ph.Out
+	res3 := <-ph.Out
 	assert.Equal(t, 113, res1.Data)
 	assert.Equal(t, 114, res2.Data)
 	assert.Equal(t, 115, res3.Data)
-	assert.True(t, ok1)
-	assert.True(t, ok2)
-	assert.True(t, ok3)
+	assert.True(t, res1.OK)
+	assert.True(t, res2.OK)
+	assert.True(t, res3.OK)
 	assert.Equal(t, "plus one error", res1.Err.Error())
 	assert.Equal(t, "plus one error", res2.Err.Error())
 	assert.Equal(t, "plus one error", res3.Err.Error())
@@ -86,15 +111,15 @@ func TestHandlersWithZeroOption(t *testing.T) {
 	ph.In <- 1
 	ph.In <- 2
 	ph.In <- 3
-	res1, ok1 := <-ph.Out
-	res2, ok2 := <-ph.Out
-	res3, ok3 := <-ph.Out
+	res1 := <-ph.Out
+	res2 := <-ph.Out
+	res3 := <-ph.Out
 	assert.Equal(t, 0, res1.Data)
 	assert.Equal(t, 0, res2.Data)
 	assert.Equal(t, 0, res3.Data)
-	assert.True(t, ok1)
-	assert.True(t, ok2)
-	assert.True(t, ok3)
+	assert.True(t, res1.OK)
+	assert.True(t, res2.OK)
+	assert.True(t, res3.OK)
 	assert.Equal(t, "plus one error", res1.Err.Error())
 	assert.Equal(t, "plus one error", res2.Err.Error())
 	assert.Equal(t, "plus one error", res3.Err.Error())
@@ -108,15 +133,15 @@ func TestHandlersWithErrHandleFuncOption(t *testing.T) {
 	ph.In <- 1 // 1 + 1 + 111 + 666 = 779
 	ph.In <- 2 // 2 + 1 + 111 + 666 = 780
 	ph.In <- 3 // 3 + 1 + 111 + 666 = 781
-	res1, ok1 := <-ph.Out
-	res2, ok2 := <-ph.Out
-	res3, ok3 := <-ph.Out
+	res1 := <-ph.Out
+	res2 := <-ph.Out
+	res3 := <-ph.Out
 	assert.Equal(t, 779, res1.Data)
 	assert.Equal(t, 780, res2.Data)
 	assert.Equal(t, 781, res3.Data)
-	assert.True(t, ok1)
-	assert.True(t, ok2)
-	assert.True(t, ok3)
+	assert.True(t, res1.OK)
+	assert.True(t, res2.OK)
+	assert.True(t, res3.OK)
 	assert.Equal(t, "plus one error", res1.Err.Error())
 	assert.Equal(t, "plus one error", res2.Err.Error())
 	assert.Equal(t, "plus one error", res3.Err.Error())
@@ -132,15 +157,15 @@ func TestHandlersWithZeroAndErrHandleFuncOption(t *testing.T) {
 	ph.In <- 1
 	ph.In <- 2
 	ph.In <- 3
-	res1, ok1 := <-ph.Out
-	res2, ok2 := <-ph.Out
-	res3, ok3 := <-ph.Out
+	res1 := <-ph.Out
+	res2 := <-ph.Out
+	res3 := <-ph.Out
 	assert.Equal(t, 0, res1.Data)
 	assert.Equal(t, 0, res2.Data)
 	assert.Equal(t, 0, res3.Data)
-	assert.True(t, ok1)
-	assert.True(t, ok2)
-	assert.True(t, ok3)
+	assert.True(t, res1.OK)
+	assert.True(t, res2.OK)
+	assert.True(t, res3.OK)
 	assert.Equal(t, "plus one error", res1.Err.Error())
 	assert.Equal(t, "plus one error", res2.Err.Error())
 	assert.Equal(t, "plus one error", res3.Err.Error())
@@ -152,15 +177,15 @@ func TestHandlersWithTimeout(t *testing.T) {
 	ph.In <- 10
 	ph.In <- 20
 	ph.In <- 30
-	res1, ok1 := <-ph.Out
-	res2, ok2 := <-ph.Out
-	res3, ok3 := <-ph.Out
+	res1 := <-ph.Out
+	res2 := <-ph.Out
+	res3 := <-ph.Out
 	assert.Equal(t, 10, res1.Data)
 	assert.Equal(t, 20, res2.Data)
 	assert.Equal(t, 30, res3.Data)
-	assert.True(t, ok1)
-	assert.True(t, ok2)
-	assert.True(t, ok3)
+	assert.True(t, res1.OK)
+	assert.True(t, res2.OK)
+	assert.True(t, res3.OK)
 	assert.Equal(t, "phos error timeout", res1.Err.Error())
 	assert.Equal(t, "phos error timeout", res2.Err.Error())
 	assert.Equal(t, "phos error timeout", res3.Err.Error())
@@ -172,15 +197,15 @@ func TestHandlersWithTimeoutOption(t *testing.T) {
 	ph.In <- 10
 	ph.In <- 20
 	ph.In <- 30
-	res1, ok1 := <-ph.Out
-	res2, ok2 := <-ph.Out
-	res3, ok3 := <-ph.Out
+	res1 := <-ph.Out
+	res2 := <-ph.Out
+	res3 := <-ph.Out
 	assert.Equal(t, 10, res1.Data)
 	assert.Equal(t, 20, res2.Data)
 	assert.Equal(t, 30, res3.Data)
-	assert.True(t, ok1)
-	assert.True(t, ok2)
-	assert.True(t, ok3)
+	assert.True(t, res1.OK)
+	assert.True(t, res2.OK)
+	assert.True(t, res3.OK)
 	assert.Equal(t, "phos error timeout", res1.Err.Error())
 	assert.Equal(t, "phos error timeout", res2.Err.Error())
 	assert.Equal(t, "phos error timeout", res3.Err.Error())
@@ -192,15 +217,15 @@ func TestHandlersWithErrTimeoutFuncOption(t *testing.T) {
 	ph.In <- 10 // 10 + 555 = 565
 	ph.In <- 20 // 20 + 555 = 575
 	ph.In <- 30 // 30 + 555 = 585
-	res1, ok1 := <-ph.Out
-	res2, ok2 := <-ph.Out
-	res3, ok3 := <-ph.Out
+	res1 := <-ph.Out
+	res2 := <-ph.Out
+	res3 := <-ph.Out
 	assert.Equal(t, 565, res1.Data)
 	assert.Equal(t, 575, res2.Data)
 	assert.Equal(t, 585, res3.Data)
-	assert.True(t, ok1)
-	assert.True(t, ok2)
-	assert.True(t, ok3)
+	assert.True(t, res1.OK)
+	assert.True(t, res2.OK)
+	assert.True(t, res3.OK)
 	assert.Equal(t, "phos error timeout", res1.Err.Error())
 	assert.Equal(t, "phos error timeout", res2.Err.Error())
 	assert.Equal(t, "phos error timeout", res3.Err.Error())
@@ -214,15 +239,15 @@ func TestHandlersWithCtxDoneFuncOption(t *testing.T) {
 	ph.In <- 10 // 10 + 555 = 565
 	ph.In <- 20 // 20 + 555 = 575
 	ph.In <- 30 // 30 + 555 = 585
-	res1, ok1 := <-ph.Out
-	res2, ok2 := <-ph.Out
-	res3, ok3 := <-ph.Out
+	res1 := <-ph.Out
+	res2 := <-ph.Out
+	res3 := <-ph.Out
 	assert.Equal(t, 565, res1.Data)
 	assert.Equal(t, 575, res2.Data)
 	assert.Equal(t, 585, res3.Data)
-	assert.True(t, ok1)
-	assert.True(t, ok2)
-	assert.True(t, ok3)
+	assert.True(t, res1.OK)
+	assert.True(t, res2.OK)
+	assert.True(t, res3.OK)
 	assert.Equal(t, "context deadline exceeded", res1.Err.Error())
 	assert.Equal(t, "context deadline exceeded", res2.Err.Error())
 	assert.Equal(t, "context deadline exceeded", res3.Err.Error())

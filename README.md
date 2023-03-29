@@ -19,6 +19,26 @@ go get github.com/B1NARY-GR0UP/phos
 [example](examples/hello)
 
 ```go
+package main
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/B1NARY-GR0UP/phos"
+)
+
+func hello(_ context.Context, data string) (string, error) {
+	return data + " PHOS", nil
+}
+
+func main() {
+	ph := phos.New[string]()
+	ph.Handlers = append(ph.Handlers, hello)
+	ph.In <- "BINARY"
+	res := <-ph.Out
+	fmt.Println(res.Data)
+}
 ```
 
 ## Blogs

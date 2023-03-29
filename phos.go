@@ -62,7 +62,11 @@ func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {
 	ctx := ph.options.Ctx
 NEXT:
 	select {
-	case data := <-in:
+	case data, ok := <-in:
+		if !ok {
+			ph.launch(out, data, false, nil)
+			goto NEXT
+		}
 		notifier := ph.pool.Get().(chan struct{})
 		timer := time.NewTimer(ph.options.Timeout)
 		go ph.executeHandlers(ctx, data, out, notifier)
@@ -72,7 +76,7 @@ NEXT:
 			if ph.options.ErrTimeoutFunc != nil {
 				data = ph.options.ErrTimeoutFunc(ctx, data).(T)
 			}
-			ph.launch(out, data, timeoutError())
+			ph.launch(out, data, true, timeoutError())
 			goto NEXT
 		case <-notifier:
 			timer.Stop()
@@ -82,7 +86,7 @@ NEXT:
 			if ph.options.CtxDoneFunc != nil {
 				data = ph.options.CtxDoneFunc(ctx, data).(T)
 			}
-			ph.launch(out, data, ctxError(ctx.Err()))
+			ph.launch(out, data, true, ctxError(ctx.Err()))
 			goto NEXT
 		}
 	}
@@ -98,27 +102,27 @@ func (ph *Phos[T]) executeHandlers(ctx context.Context, data T, out chan Result[
 			}
 			notifier <- struct{}{}
 			ph.pool.Put(notifier)
-			ph.launch(out, data, handleError(err))
+			ph.launch(out, data, true, handleError(err))
 			return
 		}
 	}
 	notifier <- struct{}{}
 	ph.pool.Put(notifier)
-	ph.launch(out, data, nil)
+	ph.launch(out, data, true, nil)
 }
 
-func (ph *Phos[T]) launch(out chan Result[T], data T, err *Error) {
+func (ph *Phos[T]) launch(out chan Result[T], data T, ok bool, err *Error) {
 	if ph.options.Zero && err != nil {
 		var zero T
 		out <- Result[T]{
 			Data: zero,
-			OK:   true,
+			OK:   ok,
 			Err:  err,
 		}
 	} else {
 		out <- Result[T]{
 			Data: data,
-			OK:   true,
+			OK:   ok,
 			Err:  err,
 		}
 	}

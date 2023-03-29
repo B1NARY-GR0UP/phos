@@ -45,7 +45,7 @@ func main() {
 | Configuration        | Default                | Description                                                                                    | Example                   |
 |----------------------|------------------------|------------------------------------------------------------------------------------------------|---------------------------|
 | `WithContext`        | `context.Background()` | Set context for PHOS                                                                           | [example](option_test.go) |
-| `WithZero`           | `false`                | Return zero value when error happened                                                          | [example](option_test.go) |
+| `WithZero`           | `false`                | Set zero value for return when error happened                                                  | [example](option_test.go) |
 | `WithTimeout`        | `time.Second * 3`      | Set timeout for handlers execution                                                             | [example](option_test.go) |
 | `WithErrHandleFunc`  | `nil`                  | Set error handle function for PHOS which will be called when handle error happened             | [example](option_test.go) |
 | `WithErrTimeoutFunc` | `nil`                  | Set error timeout function for PHOS which will be called when timeout error happened           | [example](option_test.go) |

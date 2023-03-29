@@ -74,7 +74,7 @@ func WithContext(ctx context.Context) Option {
 	}
 }
 
-// WithZero will return zero value when error happened
+// WithZero will set zero value for return when error happened
 func WithZero() Option {
 	return func(o *Options) {
 		o.Zero = true

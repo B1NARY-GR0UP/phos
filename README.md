@@ -32,6 +32,7 @@ func hello(_ context.Context, data string) (string, error) {
 
 func main() {
     ph := phos.New[string]()
+    defer close(ph.In)
     ph.Handlers = append(ph.Handlers, hello)
     ph.In <- "BINARY"
     res := <-ph.Out

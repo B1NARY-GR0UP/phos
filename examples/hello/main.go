@@ -15,6 +15,27 @@
 
 package main
 
-func main() {
+import (
+	"fmt"
+	"github.com/B1NARY-GR0UP/phos"
+)
 
+func main() {
+	ph := phos.New[int]()
+	ph.In <- 1
+	ph.In <- 2
+	ph.In <- 3
+	res1, ok1 := <-ph.Out
+	res2, ok2 := <-ph.Out
+	res3, ok3 := <-ph.Out
+	fmt.Println(res1, ok1)
+	fmt.Println(res2, ok2)
+	fmt.Println(res3, ok3)
+	// TODO: 不会出现 false 的情况
+	res4, ok4 := <-ph.Out
+	fmt.Println(res4, ok4)
+	res5, ok5 := <-ph.Out
+	fmt.Println(res5, ok5)
+	res6, ok6 := <-ph.Out
+	fmt.Println(res6, ok6)
 }

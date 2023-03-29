@@ -41,10 +41,10 @@ type Result[T any] struct {
 }
 
 // New PHOS channel
-func New[T any](cap int, opts ...Option) *Phos[T] {
+func New[T any](opts ...Option) *Phos[T] {
 	options := newOptions(opts...)
-	in := make(chan T, cap)
-	out := make(chan Result[T], cap)
+	in := make(chan T, 1)
+	out := make(chan Result[T], 1)
 	ph := &Phos[T]{
 		In:      in,
 		Out:     out,
@@ -59,37 +59,36 @@ func New[T any](cap int, opts ...Option) *Phos[T] {
 
 func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {
 	ctx := ph.options.Ctx
-	for {
-	NEXT:
+NEXT:
+	select {
+	case data := <-in:
+		notifier := ph.pool.Get().(chan struct{})
+		timer := time.NewTimer(ph.options.Timeout)
+		go ph.executeHandlers(ctx, data, out, notifier)
 		select {
-		case data := <-in:
-			notifier := ph.pool.Get().(chan struct{})
-			timer := time.NewTimer(ph.options.Timeout)
-			go ph.executeHandlers(ctx, data, out, notifier)
-			select {
-			case <-timer.C:
-				timer.Stop()
-				if ph.options.ErrTimeoutFunc != nil {
-					data = ph.options.ErrTimeoutFunc(ctx, data).(T)
-				}
-				ph.launch(out, data, timeoutError())
-				goto NEXT
-			case <-notifier:
-				timer.Stop()
-				goto NEXT
-			case <-ctx.Done():
-				timer.Stop()
-				if ph.options.CtxDoneFunc != nil {
-					data = ph.options.CtxDoneFunc(ctx, data).(T)
-				}
-				ph.launch(out, data, ctxError(ctx.Err()))
-				goto NEXT
+		case <-timer.C:
+			timer.Stop()
+			if ph.options.ErrTimeoutFunc != nil {
+				data = ph.options.ErrTimeoutFunc(ctx, data).(T)
 			}
-		default:
-			if ph.options.DefaultFunc != nil {
-				ph.options.DefaultFunc(ctx)
+			ph.launch(out, data, timeoutError())
+			goto NEXT
+		case <-notifier:
+			timer.Stop()
+			goto NEXT
+		case <-ctx.Done():
+			timer.Stop()
+			if ph.options.CtxDoneFunc != nil {
+				data = ph.options.CtxDoneFunc(ctx, data).(T)
 			}
+			ph.launch(out, data, ctxError(ctx.Err()))
+			goto NEXT
 		}
+	default:
+		if ph.options.DefaultFunc != nil {
+			ph.options.DefaultFunc(ctx)
+		}
+		goto NEXT
 	}
 }
 

@@ -26,7 +26,7 @@ import (
 )
 
 func TestSingleHandler(t *testing.T) {
-	ph := New[int](0)
+	ph := New[int]()
 	ph.Handlers = append(ph.Handlers, plusOne)
 	ph.In <- 0
 	res, ok := <-ph.Out
@@ -38,7 +38,7 @@ func TestSingleHandler(t *testing.T) {
 // TODO: 即使一次性输入的数据超出缓冲区大小，也不会阻塞
 // TODO: 如果取出的数据超出缓冲区大小，会阻塞而不是报错
 func TestMultiHandlers(t *testing.T) {
-	ph := New[int](3)
+	ph := New[int]()
 	ph.Handlers = append(ph.Handlers, plusOne, plusOne, plusOne)
 	ph.In <- 1 // 1 + 1 + 1 + 1 = 4
 	ph.In <- 2 // 2 + 1 + 1 + 1 = 5
@@ -58,7 +58,7 @@ func TestMultiHandlers(t *testing.T) {
 }
 
 func TestHandlersWithErr(t *testing.T) {
-	ph := New[int](3)
+	ph := New[int]()
 	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithErr, plusOne)
 	// Note:
 	// The last handler will not be executed because of the error
@@ -82,7 +82,7 @@ func TestHandlersWithErr(t *testing.T) {
 func TestHandlersWithZeroOption(t *testing.T) {
 	// Note:
 	// WithZero will make the result of the handler with error to be zero value of the type
-	ph := New[int](3, WithZero())
+	ph := New[int](WithZero())
 	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithErr, plusOne)
 	ph.In <- 1
 	ph.In <- 2
@@ -104,7 +104,7 @@ func TestHandlersWithZeroOption(t *testing.T) {
 func TestHandlersWithErrHandleFuncOption(t *testing.T) {
 	// Note:
 	// WithErrHandleFunc will make the result of the handler with error to be the return value of the errHandleFunc
-	ph := New[int](3, WithErrHandleFunc(plusSixSixSix))
+	ph := New[int](WithErrHandleFunc(plusSixSixSix))
 	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithErr, plusOne)
 	ph.In <- 1 // 1 + 1 + 111 + 666 = 779
 	ph.In <- 2 // 2 + 1 + 111 + 666 = 780
@@ -128,7 +128,7 @@ func TestHandlersWithZeroAndErrHandleFuncOption(t *testing.T) {
 	// When WithZero and WithErrHandleFunc were enabled at the same time,
 	// WithZero will overwrite the result of the WithErrHandleFunc option, that is,
 	// the outputs will be the zero value of the appropriate type when error occur
-	ph := New[int](3, WithZero(), WithErrHandleFunc(plusSixSixSix))
+	ph := New[int](WithZero(), WithErrHandleFunc(plusSixSixSix))
 	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithErr, plusOne)
 	ph.In <- 1
 	ph.In <- 2
@@ -148,7 +148,7 @@ func TestHandlersWithZeroAndErrHandleFuncOption(t *testing.T) {
 }
 
 func TestHandlersWithTimeout(t *testing.T) {
-	ph := New[int](3)
+	ph := New[int]()
 	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithSleep, plusOne)
 	ph.In <- 10
 	ph.In <- 20
@@ -168,7 +168,7 @@ func TestHandlersWithTimeout(t *testing.T) {
 }
 
 func TestHandlersWithTimeoutOption(t *testing.T) {
-	ph := New[int](3, WithTimeout(time.Second*5))
+	ph := New[int](WithTimeout(time.Second * 5))
 	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithSleep, plusOne)
 	ph.In <- 10
 	ph.In <- 20
@@ -188,7 +188,7 @@ func TestHandlersWithTimeoutOption(t *testing.T) {
 }
 
 func TestHandlersWithErrTimeoutFuncOption(t *testing.T) {
-	ph := New[int](3, WithErrTimeoutFunc(plusFiveFiveFive))
+	ph := New[int](WithErrTimeoutFunc(plusFiveFiveFive))
 	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithSleep, plusOne)
 	ph.In <- 10 // 10 + 555 = 565
 	ph.In <- 20 // 20 + 555 = 575
@@ -210,7 +210,7 @@ func TestHandlersWithErrTimeoutFuncOption(t *testing.T) {
 func TestHandlersWithCtxDoneFuncOption(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	defer cancel()
-	ph := New[int](3, WithContext(ctx), WithCtxDoneFunc(plusFiveFiveFive))
+	ph := New[int](WithContext(ctx), WithCtxDoneFunc(plusFiveFiveFive))
 	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithSleep, plusOne)
 	ph.In <- 10 // 10 + 555 = 565
 	ph.In <- 20 // 20 + 555 = 575
@@ -230,7 +230,7 @@ func TestHandlersWithCtxDoneFuncOption(t *testing.T) {
 }
 
 func TestDefaultFuncOption(t *testing.T) {
-	ph := New[int](0, WithDefaultFunc(logHelloPHOS))
+	ph := New[int](WithDefaultFunc(logHelloPHOS))
 	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithErr, plusOne)
 	time.Sleep(time.Microsecond * 100)
 }

@@ -43,6 +43,17 @@ func main() {
 }
 ```
 
+## Configuration
+
+| Configuration        | Default                | Description                                                                                    | Example                   |
+|----------------------|------------------------|------------------------------------------------------------------------------------------------|---------------------------|
+| `WithContext`        | `context.Background()` | Set context for PHOS                                                                           | [example](option_test.go) |
+| `WithZero`           | `false`                | Return zero value when handle error happened                                                   | [example](option_test.go) |
+| `WithTimeout`        | `time.Second * 3`      | Set timeout for handlers execution                                                             | [example](option_test.go) |
+| `WithErrHandleFunc`  | `nil`                  | Set error handle function for PHOS which will be called when error happened                    | [example](option_test.go) |
+| `WithErrTimeoutFunc` | `nil`                  | Set error timeout function for PHOS which will be called when timeout happened                 | [example](option_test.go) |
+| `WithDoneFunc`       | `nil`                  | Set context done function for PHOS which will be called when context done during data handling | [example](option_test.go) |
+
 ## License
 
 PHOS is distributed under the [Apache License 2.0](./LICENSE). The licenses of third party dependencies of PHOS are explained [here](./licenses).

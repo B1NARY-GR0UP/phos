@@ -1,7 +1,5 @@
 # PHOS
 
-[![Go Report Card](https://goreportcard.com/badge/github.com/B1NARY-GR0UP/phos)](https://goreportcard.com/report/github.com/B1NARY-GR0UP/phos) [![coveralls](https://coveralls.io/repos/B1NARY-GR0UP/phos/badge.svg?branch=main&service=github)](https://coveralls.io/github/B1NARY-GR0UP/phos?branch=main)
-
 > You Can (Not) Redo
 
 ![PHOS](images/PHOS.png)

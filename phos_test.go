@@ -56,7 +56,7 @@ func TestClose(t *testing.T) {
 //	fmt.Println(res1, ok1)
 //	fmt.Println(res2, ok2)
 //	fmt.Println(res3, ok3)
-//	// TODO: 判断是否接收的次数大于传入的次数有延迟，延迟时间等于 PHOS 超时时间
+//	// TODO: 判断接收的次数大于传入的次数有延迟，延迟时间等于 PHOS 超时时间
 //	res4, ok4 := <-ph.Out
 //	fmt.Println(res4, ok4)
 //}

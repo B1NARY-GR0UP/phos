@@ -37,6 +37,7 @@ type Handler[T any] func(ctx context.Context, data T) (T, error)
 // Result PHOS output result
 type Result[T any] struct {
 	Data T
+	OK   bool
 	Err  *Error
 }
 
@@ -116,11 +117,13 @@ func (ph *Phos[T]) launch(out chan Result[T], data T, err *Error) {
 		var zero T
 		out <- Result[T]{
 			Data: zero,
+			OK:   true,
 			Err:  err,
 		}
 	} else {
 		out <- Result[T]{
 			Data: data,
+			OK:   true,
 			Err:  err,
 		}
 	}

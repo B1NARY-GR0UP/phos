@@ -1,5 +1,7 @@
 # PHOS
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/B1NARY-GR0UP/phos)](https://goreportcard.com/report/github.com/B1NARY-GR0UP/phos)
+
 > You Can (Not) Redo
 
 ![PHOS](images/PHOS.png)

@@ -16,26 +16,21 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/B1NARY-GR0UP/phos"
 )
 
+func plusOne(_ context.Context, data int) (int, error) {
+	return data + 1, nil
+}
+
 func main() {
 	ph := phos.New[int]()
-	ph.In <- 1
-	ph.In <- 2
-	ph.In <- 3
-	res1, ok1 := <-ph.Out
-	res2, ok2 := <-ph.Out
-	res3, ok3 := <-ph.Out
-	fmt.Println(res1, ok1)
-	fmt.Println(res2, ok2)
-	fmt.Println(res3, ok3)
-	// TODO: 不会出现 false 的情况
+	ph.Handlers = append(ph.Handlers, plusOne)
+	// TODO: bug1: close(ph.In) 后，ph.Out 会一直取出零值数据，并且 ok 为 true
+	// TODO: bug2: 不传入数据，ph.Out 却会取出经过 handler 的数据
+	//close(ph.In)
 	res4, ok4 := <-ph.Out
 	fmt.Println(res4, ok4)
-	res5, ok5 := <-ph.Out
-	fmt.Println(res5, ok5)
-	res6, ok6 := <-ph.Out
-	fmt.Println(res6, ok6)
 }

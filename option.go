@@ -28,7 +28,6 @@ var defaultOptions = Options{
 	ErrHandleFunc:  nil,
 	ErrTimeoutFunc: nil,
 	CtxDoneFunc:    nil,
-	DefaultFunc:    nil,
 }
 
 // Option for PHOS
@@ -42,14 +41,12 @@ type Options struct {
 	ErrHandleFunc  ErrHandleFunc
 	ErrTimeoutFunc ErrTimeoutFunc
 	CtxDoneFunc    CtxDoneFunc
-	DefaultFunc    DefaultFunc
 }
 
 type (
 	ErrHandleFunc  func(ctx context.Context, data any, err error) any
 	ErrTimeoutFunc func(ctx context.Context, data any) any
 	CtxDoneFunc    func(ctx context.Context, data any) any
-	DefaultFunc    func(ctx context.Context)
 )
 
 // newOptions new options for PHOS
@@ -61,7 +58,6 @@ func newOptions(opts ...Option) *Options {
 		ErrHandleFunc:  defaultOptions.ErrHandleFunc,
 		ErrTimeoutFunc: defaultOptions.ErrTimeoutFunc,
 		CtxDoneFunc:    defaultOptions.CtxDoneFunc,
-		DefaultFunc:    defaultOptions.DefaultFunc,
 	}
 	options.apply(opts...)
 	return options
@@ -114,12 +110,5 @@ func WithErrTimeoutFunc(fn ErrTimeoutFunc) Option {
 func WithCtxDoneFunc(fn CtxDoneFunc) Option {
 	return func(o *Options) {
 		o.CtxDoneFunc = fn
-	}
-}
-
-// WithDefaultFunc will set default function for PHOS which will be called when no data in channel
-func WithDefaultFunc(fn DefaultFunc) Option {
-	return func(o *Options) {
-		o.DefaultFunc = fn
 	}
 }

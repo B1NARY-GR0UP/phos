@@ -18,7 +18,6 @@ package phos
 import (
 	"context"
 	"errors"
-	"log"
 	"testing"
 	"time"
 
@@ -229,12 +228,6 @@ func TestHandlersWithCtxDoneFuncOption(t *testing.T) {
 	assert.Equal(t, "context deadline exceeded", res3.Err.Error())
 }
 
-func TestDefaultFuncOption(t *testing.T) {
-	ph := New[int](WithDefaultFunc(logHelloPHOS))
-	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithErr, plusOne)
-	time.Sleep(time.Microsecond * 100)
-}
-
 func plusOne(_ context.Context, data int) (int, error) {
 	return data + 1, nil
 }
@@ -254,8 +247,4 @@ func plusFiveFiveFive(_ context.Context, data any) any {
 func plusOneWithSleep(_ context.Context, data int) (int, error) {
 	time.Sleep(time.Second * 6)
 	return data + 1, nil
-}
-
-func logHelloPHOS(_ context.Context) {
-	log.Println("hello phos")
 }

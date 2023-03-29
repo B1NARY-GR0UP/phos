@@ -85,11 +85,6 @@ NEXT:
 			ph.launch(out, data, ctxError(ctx.Err()))
 			goto NEXT
 		}
-	default:
-		if ph.options.DefaultFunc != nil {
-			ph.options.DefaultFunc(ctx)
-		}
-		goto NEXT
 	}
 }
 

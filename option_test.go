@@ -34,9 +34,6 @@ func TestOptions(t *testing.T) {
 	ctxDoneFunc := func(ctx context.Context, data any) any {
 		return nil
 	}
-	defaultFunc := func(ctx context.Context) {
-		return
-	}
 	options := newOptions(
 		WithContext(context.TODO()),
 		WithZero(),
@@ -44,7 +41,6 @@ func TestOptions(t *testing.T) {
 		WithErrHandleFunc(errHandleFunc),
 		WithErrTimeoutFunc(errTimeoutFunc),
 		WithCtxDoneFunc(ctxDoneFunc),
-		WithDefaultFunc(defaultFunc),
 	)
 	assert.Equal(t, context.TODO(), options.Ctx)
 	assert.True(t, options.Zero)
@@ -52,7 +48,6 @@ func TestOptions(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("%p", errHandleFunc), fmt.Sprintf("%p", options.ErrHandleFunc))
 	assert.Equal(t, fmt.Sprintf("%p", errTimeoutFunc), fmt.Sprintf("%p", options.ErrTimeoutFunc))
 	assert.Equal(t, fmt.Sprintf("%p", ctxDoneFunc), fmt.Sprintf("%p", options.CtxDoneFunc))
-	assert.Equal(t, fmt.Sprintf("%p", defaultFunc), fmt.Sprintf("%p", options.DefaultFunc))
 }
 
 func TestDefaultOptions(t *testing.T) {
@@ -63,5 +58,4 @@ func TestDefaultOptions(t *testing.T) {
 	assert.Nil(t, options.ErrHandleFunc)
 	assert.Nil(t, options.ErrTimeoutFunc)
 	assert.Nil(t, options.CtxDoneFunc)
-	assert.Nil(t, options.DefaultFunc)
 }

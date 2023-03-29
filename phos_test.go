@@ -214,7 +214,7 @@ func TestHandlersWithErrTimeoutFuncOption(t *testing.T) {
 	assert.Equal(t, "phos error timeout", res3.Err.Error())
 }
 
-func TestHandlersWithCtxDoneFuncOption(t *testing.T) {
+func TestHandlersWithDoneFuncOption(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	defer cancel()
 	ph := New[int](WithContext(ctx), WithDoneFunc(plusFiveFiveFive))

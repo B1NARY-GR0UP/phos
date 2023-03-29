@@ -74,7 +74,7 @@ func WithContext(ctx context.Context) Option {
 	}
 }
 
-// WithZero will return zero value when handle error happened
+// WithZero will return zero value when error happened
 func WithZero() Option {
 	return func(o *Options) {
 		o.Zero = true
@@ -88,14 +88,14 @@ func WithTimeout(timeout time.Duration) Option {
 	}
 }
 
-// WithErrHandleFunc will set error handle function for PHOS which will be called when error happened
+// WithErrHandleFunc will set error handle function for PHOS which will be called when handle error happened
 func WithErrHandleFunc(fn ErrHandleFunc) Option {
 	return func(o *Options) {
 		o.ErrHandleFunc = fn
 	}
 }
 
-// WithErrTimeoutFunc will set error timeout function for PHOS which will be called when timeout happened
+// WithErrTimeoutFunc will set error timeout function for PHOS which will be called when timeout error happened
 func WithErrTimeoutFunc(fn ErrTimeoutFunc) Option {
 	return func(o *Options) {
 		o.ErrTimeoutFunc = fn

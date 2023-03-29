@@ -15,7 +15,7 @@
 
 package phos
 
-// BINARY PHOS
+// BINARY-PHOS
 const (
 	Name    = "PHOS"
 	Version = "v0.1.0"

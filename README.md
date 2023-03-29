@@ -2,9 +2,11 @@
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/B1NARY-GR0UP/phos)](https://goreportcard.com/report/github.com/B1NARY-GR0UP/phos) [![coveralls](https://coveralls.io/repos/B1NARY-GR0UP/phos/badge.svg?branch=main&service=github)](https://coveralls.io/github/B1NARY-GR0UP/phos?branch=main)
 
+> BINARY PHOS
+
 ![]()
 
-> Phosphophyllite
+PHOS is a channel with internal handlers and diversified options.
 
 ## Install
 
@@ -22,22 +24,22 @@ go get github.com/B1NARY-GR0UP/phos
 package main
 
 import (
-	"context"
-	"fmt"
+    "context"
+    "fmt"
 
-	"github.com/B1NARY-GR0UP/phos"
+    "github.com/B1NARY-GR0UP/phos"
 )
 
 func hello(_ context.Context, data string) (string, error) {
-	return data + " PHOS", nil
+    return data + " PHOS", nil
 }
 
 func main() {
-	ph := phos.New[string]()
-	ph.Handlers = append(ph.Handlers, hello)
-	ph.In <- "BINARY"
-	res := <-ph.Out
-	fmt.Println(res.Data)
+    ph := phos.New[string]()
+    ph.Handlers = append(ph.Handlers, hello)
+    ph.In <- "BINARY"
+    res := <-ph.Out
+    fmt.Println(res.Data)
 }
 ```
 

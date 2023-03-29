@@ -44,23 +44,6 @@ func TestClose(t *testing.T) {
 	assert.Nil(t, res.Err)
 }
 
-//func TestReceiveMore(t *testing.T) {
-//	ph := New[int]()
-//	ph.Handlers = append(ph.Handlers, plusOne)
-//	ph.In <- 1
-//	ph.In <- 2
-//	ph.In <- 3
-//	res1, ok1 := <-ph.Out
-//	res2, ok2 := <-ph.Out
-//	res3, ok3 := <-ph.Out
-//	fmt.Println(res1, ok1)
-//	fmt.Println(res2, ok2)
-//	fmt.Println(res3, ok3)
-//	// TODO: 判断接收的次数大于传入的次数有延迟，延迟时间等于 PHOS 超时时间
-//	res4, ok4 := <-ph.Out
-//	fmt.Println(res4, ok4)
-//}
-
 func TestMultiHandlers(t *testing.T) {
 	ph := New[int]()
 	ph.Handlers = append(ph.Handlers, plusOne, plusOne, plusOne)
@@ -234,7 +217,7 @@ func TestHandlersWithErrTimeoutFuncOption(t *testing.T) {
 func TestHandlersWithCtxDoneFuncOption(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	defer cancel()
-	ph := New[int](WithContext(ctx), WithCtxDoneFunc(plusFiveFiveFive))
+	ph := New[int](WithContext(ctx), WithDoneFunc(plusFiveFiveFive))
 	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithSleep, plusOne)
 	ph.In <- 10 // 10 + 555 = 565
 	ph.In <- 20 // 20 + 555 = 575

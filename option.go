@@ -27,7 +27,7 @@ var defaultOptions = Options{
 	Timeout:        time.Second * 3,
 	ErrHandleFunc:  nil,
 	ErrTimeoutFunc: nil,
-	CtxDoneFunc:    nil,
+	DoneFunc:       nil,
 }
 
 // Option for PHOS
@@ -40,13 +40,13 @@ type Options struct {
 	Timeout        time.Duration
 	ErrHandleFunc  ErrHandleFunc
 	ErrTimeoutFunc ErrTimeoutFunc
-	CtxDoneFunc    CtxDoneFunc
+	DoneFunc       DoneFunc
 }
 
 type (
 	ErrHandleFunc  func(ctx context.Context, data any, err error) any
 	ErrTimeoutFunc func(ctx context.Context, data any) any
-	CtxDoneFunc    func(ctx context.Context, data any) any
+	DoneFunc       func(ctx context.Context, data any) any
 )
 
 // newOptions new options for PHOS
@@ -57,7 +57,7 @@ func newOptions(opts ...Option) *Options {
 		Timeout:        defaultOptions.Timeout,
 		ErrHandleFunc:  defaultOptions.ErrHandleFunc,
 		ErrTimeoutFunc: defaultOptions.ErrTimeoutFunc,
-		CtxDoneFunc:    defaultOptions.CtxDoneFunc,
+		DoneFunc:       defaultOptions.DoneFunc,
 	}
 	options.apply(opts...)
 	return options
@@ -104,11 +104,11 @@ func WithErrTimeoutFunc(fn ErrTimeoutFunc) Option {
 	}
 }
 
-// WithCtxDoneFunc will set ctx done function for PHOS which will be called when ctx done during data handling
+// WithDoneFunc will set ctx done function for PHOS which will be called when ctx done during data handling
 // used for emergency stop, terminate all operations and exit
 // Note: You should use it will WithContext, otherwise it will not work
-func WithCtxDoneFunc(fn CtxDoneFunc) Option {
+func WithDoneFunc(fn DoneFunc) Option {
 	return func(o *Options) {
-		o.CtxDoneFunc = fn
+		o.DoneFunc = fn
 	}
 }

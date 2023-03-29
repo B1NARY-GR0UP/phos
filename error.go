@@ -19,15 +19,19 @@ import "errors"
 
 var _ error = (*Error)(nil)
 
+// Error for PHOS
+// Error implements the error interface
 type Error struct {
 	Err  error
 	Type ErrorType
 }
 
+// Error returns the error string
 func (e *Error) Error() string {
 	return e.Err.Error()
 }
 
+// ErrorType for PHOS Error
 type ErrorType uint64
 
 const (

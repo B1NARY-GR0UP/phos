@@ -37,8 +37,9 @@ type Handler[T any] func(ctx context.Context, data T) (T, error)
 // Result PHOS output result
 type Result[T any] struct {
 	Data T
-	OK   bool
-	Err  *Error
+	// Note: You should use the OK of Result rather than the second return value of PHOS Out channel
+	OK  bool
+	Err *Error
 }
 
 // New PHOS channel

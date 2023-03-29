@@ -20,7 +20,6 @@ import (
 	"time"
 )
 
-// defaultOptions default options for PHOS
 var defaultOptions = Options{
 	Ctx:            context.Background(),
 	Zero:           false,
@@ -49,7 +48,6 @@ type (
 	DoneFunc       func(ctx context.Context, data any) any
 )
 
-// newOptions new options for PHOS
 func newOptions(opts ...Option) *Options {
 	options := &Options{
 		Ctx:            defaultOptions.Ctx,

@@ -16,10 +16,6 @@ go get github.com/B1NARY-GR0UP/phos
 
 ## Quick Start
 
-### Hello
-
-[example](examples/hello)
-
 ```go
 package main
 

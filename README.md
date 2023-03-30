@@ -27,7 +27,7 @@ import (
 )
 
 func hello(_ context.Context, data string) (string, error) {
-    return data + " PHOS", nil
+    return data + "-PHOS", nil
 }
 
 func main() {

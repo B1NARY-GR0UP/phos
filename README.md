@@ -42,14 +42,14 @@ func main() {
 
 ## Configuration
 
-| Configuration        | Default                | Description                                                                                    | Example                 |
-|----------------------|------------------------|------------------------------------------------------------------------------------------------|-------------------------|
-| `WithContext`        | `context.Background()` | Set context for PHOS                                                                           | [example](phos_test.go) |
-| `WithZero`           | `false`                | Set zero value for return when error happened                                                  | [example](phos_test.go) |
-| `WithTimeout`        | `time.Second * 3`      | Set timeout for handlers execution                                                             | [example](phos_test.go) |
-| `WithErrHandleFunc`  | `nil`                  | Set error handle function for PHOS which will be called when handle error happened             | [example](phos_test.go) |
-| `WithErrTimeoutFunc` | `nil`                  | Set error timeout function for PHOS which will be called when timeout error happened           | [example](phos_test.go) |
-| `WithDoneFunc`       | `nil`                  | Set context done function for PHOS which will be called when context done during data handling | [example](phos_test.go) |
+| Configuration        | Default                | Description                                                                          | Example                 |
+|----------------------|------------------------|--------------------------------------------------------------------------------------|-------------------------|
+| `WithContext`        | `context.Background()` | Set context for PHOS                                                                 | [example](phos_test.go) |
+| `WithZero`           | `false`                | Set zero value for return when error happened                                        | [example](phos_test.go) |
+| `WithTimeout`        | `time.Second * 3`      | Set timeout for handlers execution                                                   | [example](phos_test.go) |
+| `WithErrHandleFunc`  | `nil`                  | Set error handle function for PHOS which will be called when handle error happened   | [example](phos_test.go) |
+| `WithErrTimeoutFunc` | `nil`                  | Set error timeout function for PHOS which will be called when timeout error happened | [example](phos_test.go) |
+| `WithErrDoneFunc`    | `nil`                  | Set err done function for PHOS which will be called when context done happened       | [example](phos_test.go) |
 
 ## License
 

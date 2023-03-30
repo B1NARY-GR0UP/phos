@@ -84,8 +84,8 @@ NEXT:
 			goto NEXT
 		case <-ctx.Done():
 			timer.Stop()
-			if ph.options.DoneFunc != nil {
-				data = ph.options.DoneFunc(ctx, data).(T)
+			if ph.options.ErrDoneFunc != nil {
+				data = ph.options.ErrDoneFunc(ctx, data, ctx.Err()).(T)
 			}
 			ph.launch(out, data, true, ctxError(ctx.Err()))
 			goto NEXT

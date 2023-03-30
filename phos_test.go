@@ -217,17 +217,17 @@ func TestHandlersWithErrTimeoutFuncOption(t *testing.T) {
 func TestHandlersWithDoneFuncOption(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	defer cancel()
-	ph := New[int](WithContext(ctx), WithDoneFunc(plusFiveFiveFive))
+	ph := New[int](WithContext(ctx), WithErrDoneFunc(plusSixSixSix))
 	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithSleep, plusOne)
-	ph.In <- 10 // 10 + 555 = 565
-	ph.In <- 20 // 20 + 555 = 575
-	ph.In <- 30 // 30 + 555 = 585
+	ph.In <- 10 // 10 + 666 = 676
+	ph.In <- 20 // 20 + 666 = 686
+	ph.In <- 30 // 30 + 666 = 696
 	res1 := <-ph.Out
 	res2 := <-ph.Out
 	res3 := <-ph.Out
-	assert.Equal(t, 565, res1.Data)
-	assert.Equal(t, 575, res2.Data)
-	assert.Equal(t, 585, res3.Data)
+	assert.Equal(t, 676, res1.Data)
+	assert.Equal(t, 686, res2.Data)
+	assert.Equal(t, 696, res3.Data)
 	assert.True(t, res1.OK)
 	assert.True(t, res2.OK)
 	assert.True(t, res3.OK)

@@ -31,7 +31,7 @@ func TestOptions(t *testing.T) {
 	errTimeoutFunc := func(ctx context.Context, data any) any {
 		return nil
 	}
-	doneFunc := func(ctx context.Context, data any) any {
+	errDoneFunc := func(ctx context.Context, data any, err error) any {
 		return nil
 	}
 	options := newOptions(
@@ -40,14 +40,14 @@ func TestOptions(t *testing.T) {
 		WithTimeout(time.Second*5),
 		WithErrHandleFunc(errHandleFunc),
 		WithErrTimeoutFunc(errTimeoutFunc),
-		WithDoneFunc(doneFunc),
+		WithErrDoneFunc(errDoneFunc),
 	)
 	assert.Equal(t, context.TODO(), options.Ctx)
 	assert.True(t, options.Zero)
 	assert.Equal(t, time.Second*5, options.Timeout)
 	assert.Equal(t, fmt.Sprintf("%p", errHandleFunc), fmt.Sprintf("%p", options.ErrHandleFunc))
 	assert.Equal(t, fmt.Sprintf("%p", errTimeoutFunc), fmt.Sprintf("%p", options.ErrTimeoutFunc))
-	assert.Equal(t, fmt.Sprintf("%p", doneFunc), fmt.Sprintf("%p", options.DoneFunc))
+	assert.Equal(t, fmt.Sprintf("%p", errDoneFunc), fmt.Sprintf("%p", options.ErrDoneFunc))
 }
 
 func TestDefaultOptions(t *testing.T) {
@@ -57,5 +57,5 @@ func TestDefaultOptions(t *testing.T) {
 	assert.Equal(t, time.Second*3, options.Timeout)
 	assert.Nil(t, options.ErrHandleFunc)
 	assert.Nil(t, options.ErrTimeoutFunc)
-	assert.Nil(t, options.DoneFunc)
+	assert.Nil(t, options.ErrDoneFunc)
 }

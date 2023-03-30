@@ -42,7 +42,7 @@ func main() {
 
 ## Configuration
 
-| Configuration        | Default                | Description                                                                          | Example                 |
+| Option               | Default                | Description                                                                          | Example                 |
 |----------------------|------------------------|--------------------------------------------------------------------------------------|-------------------------|
 | `WithContext`        | `context.Background()` | Set context for PHOS                                                                 | [example](phos_test.go) |
 | `WithZero`           | `false`                | Set zero value for return when error happened                                        | [example](phos_test.go) |
@@ -50,6 +50,10 @@ func main() {
 | `WithErrHandleFunc`  | `nil`                  | Set error handle function for PHOS which will be called when handle error happened   | [example](phos_test.go) |
 | `WithErrTimeoutFunc` | `nil`                  | Set error timeout function for PHOS which will be called when timeout error happened | [example](phos_test.go) |
 | `WithErrDoneFunc`    | `nil`                  | Set err done function for PHOS which will be called when context done happened       | [example](phos_test.go) |
+
+## Blogs
+
+- [PHOS: A Go channel extension with internal handlers](https://dev.to/justlorain/phos-a-go-channel-extension-with-internal-handlers-4lad) | [中文](https://juejin.cn/post/7216236114981584953)
 
 ## License
 

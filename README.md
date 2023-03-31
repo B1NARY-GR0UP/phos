@@ -33,6 +33,7 @@ func hello(_ context.Context, data string) (string, error) {
 func main() {
     ph := phos.New[string]()
     defer close(ph.In)
+	// Note: You should decide which handlers you want to use once, otherwise multiple changes to the Handlers slice may cause data race problem
     ph.Handlers = append(ph.Handlers, hello)
     ph.In <- "BINARY"
     res := <-ph.Out

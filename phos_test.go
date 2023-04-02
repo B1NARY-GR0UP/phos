@@ -26,7 +26,7 @@ import (
 
 func TestSingleHandler(t *testing.T) {
 	ph := New[int]()
-	ph.Handlers = append(ph.Handlers, plusOne)
+	ph.Append(plusOne)
 	ph.In <- 0
 	res := <-ph.Out
 	assert.Equal(t, 1, res.Data)
@@ -36,9 +36,10 @@ func TestSingleHandler(t *testing.T) {
 
 func TestClose(t *testing.T) {
 	ph := New[int]()
-	ph.Handlers = append(ph.Handlers, plusOne)
+	ph.Append(plusOne)
 	close(ph.In)
-	res := <-ph.Out
+	res, ok := <-ph.Out
+	assert.True(t, ok)
 	assert.Equal(t, 0, res.Data)
 	assert.False(t, res.OK)
 	assert.Nil(t, res.Err)
@@ -46,7 +47,7 @@ func TestClose(t *testing.T) {
 
 func TestMultiHandlers(t *testing.T) {
 	ph := New[int]()
-	ph.Handlers = append(ph.Handlers, plusOne, plusOne, plusOne)
+	ph.Append(plusOne, plusOne, plusOne)
 	ph.In <- 1 // 1 + 1 + 1 + 1 = 4
 	ph.In <- 2 // 2 + 1 + 1 + 1 = 5
 	ph.In <- 3 // 3 + 1 + 1 + 1 = 6
@@ -66,7 +67,7 @@ func TestMultiHandlers(t *testing.T) {
 
 func TestHandlersWithErr(t *testing.T) {
 	ph := New[int]()
-	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithErr, plusOne)
+	ph.Append(plusOne, plusOneWithErr, plusOne)
 	// Note:
 	// The last handler will not be executed because of the error
 	ph.In <- 1 // 1 + 111 + 1 = 113
@@ -90,7 +91,7 @@ func TestHandlersWithZeroOption(t *testing.T) {
 	// Note:
 	// WithZero will make the result of the handler with error to be zero value of the type
 	ph := New[int](WithZero())
-	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithErr, plusOne)
+	ph.Append(plusOne, plusOneWithErr, plusOne)
 	ph.In <- 1
 	ph.In <- 2
 	ph.In <- 3
@@ -112,7 +113,7 @@ func TestHandlersWithErrHandleFuncOption(t *testing.T) {
 	// Note:
 	// WithErrHandleFunc will make the result of the handler with error to be the return value of the errHandleFunc
 	ph := New[int](WithErrHandleFunc(plusSixSixSix))
-	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithErr, plusOne)
+	ph.Append(plusOne, plusOneWithErr, plusOne)
 	ph.In <- 1 // 1 + 1 + 111 + 666 = 779
 	ph.In <- 2 // 2 + 1 + 111 + 666 = 780
 	ph.In <- 3 // 3 + 1 + 111 + 666 = 781
@@ -136,7 +137,7 @@ func TestHandlersWithZeroAndErrHandleFuncOption(t *testing.T) {
 	// WithZero will overwrite the result of the WithErrHandleFunc option, that is,
 	// the outputs will be the zero value of the appropriate type when error occur
 	ph := New[int](WithZero(), WithErrHandleFunc(plusSixSixSix))
-	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithErr, plusOne)
+	ph.Append(plusOne, plusOneWithErr, plusOne)
 	ph.In <- 1
 	ph.In <- 2
 	ph.In <- 3
@@ -155,8 +156,9 @@ func TestHandlersWithZeroAndErrHandleFuncOption(t *testing.T) {
 }
 
 func TestHandlersWithTimeout(t *testing.T) {
+	// Note: Execution time should be around 9 second
 	ph := New[int]()
-	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithSleep, plusOne)
+	ph.Append(plusOne, plusOneWithSleep, plusOne)
 	ph.In <- 10
 	ph.In <- 20
 	ph.In <- 30
@@ -175,8 +177,9 @@ func TestHandlersWithTimeout(t *testing.T) {
 }
 
 func TestHandlersWithTimeoutOption(t *testing.T) {
+	// Note: Execution time should be around 15 second
 	ph := New[int](WithTimeout(time.Second * 5))
-	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithSleep, plusOne)
+	ph.Append(plusOne, plusOneWithSleep, plusOne)
 	ph.In <- 10
 	ph.In <- 20
 	ph.In <- 30
@@ -195,8 +198,9 @@ func TestHandlersWithTimeoutOption(t *testing.T) {
 }
 
 func TestHandlersWithErrTimeoutFuncOption(t *testing.T) {
+	// Note: Execution time should be around 9 second
 	ph := New[int](WithErrTimeoutFunc(plusFiveFiveFive))
-	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithSleep, plusOne)
+	ph.Append(plusOne, plusOneWithSleep, plusOne)
 	ph.In <- 10 // 10 + 555 = 565
 	ph.In <- 20 // 20 + 555 = 575
 	ph.In <- 30 // 30 + 555 = 585
@@ -215,10 +219,11 @@ func TestHandlersWithErrTimeoutFuncOption(t *testing.T) {
 }
 
 func TestHandlersWithDoneFuncOption(t *testing.T) {
+	// Note: Execution time should be around 1 second
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	defer cancel()
 	ph := New[int](WithContext(ctx), WithErrDoneFunc(plusSixSixSix))
-	ph.Handlers = append(ph.Handlers, plusOne, plusOneWithSleep, plusOne)
+	ph.Append(plusOne, plusOneWithSleep, plusOne)
 	ph.In <- 10 // 10 + 666 = 676
 	ph.In <- 20 // 20 + 666 = 686
 	ph.In <- 30 // 30 + 666 = 696

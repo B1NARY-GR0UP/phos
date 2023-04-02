@@ -17,16 +17,18 @@ package phos
 
 import (
 	"context"
+	"sync"
+	"time"
 )
 
 // Phos short for Phosphophyllite
 // PHOS is a channel with internal handler chain
 type Phos[T any] struct {
-	In  chan<- T
-	Out <-chan Result[T]
-
-	options  *Options
-	handlers chan Handler[T]
+	In          chan<- T
+	Out         <-chan Result[T]
+	handlerChan chan Handler[T]
+	pool        sync.Pool
+	options     *Options
 }
 
 // Handler handles the data of PHOS channel
@@ -43,61 +45,59 @@ type Result[T any] struct {
 // New PHOS channel
 func New[T any](opts ...Option) *Phos[T] {
 	options := newOptions(opts...)
-
 	in := make(chan T, 1)
 	out := make(chan Result[T], 1)
-
 	ph := &Phos[T]{
-		In:       in,
-		Out:      out,
-		options:  options,
-		handlers: make(chan Handler[T]),
+		In:          in,
+		Out:         out,
+		handlerChan: make(chan Handler[T]),
+		options:     options,
 	}
-
+	ph.pool.New = func() any {
+		return make(chan Result[T])
+	}
 	go ph.handle(in, out)
-
 	return ph
 }
 
-func (ph *Phos[T]) AddHandler(h Handler[T]) {
-	go func() {
-		ph.handlers <- h
-	}()
+// Append add handler for PHOS to execute
+func (ph *Phos[T]) Append(handlers ...Handler[T]) {
+	for _, handler := range handlers {
+		ph.handlerChan <- handler
+	}
 }
 
 func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {
-	var handlers []Handler[T]
+	ctx := ph.options.Ctx
+	handlers := make([]Handler[T], 0)
 	for {
 		select {
-		case handler := <-ph.handlers:
+		case handler := <-ph.handlerChan:
 			handlers = append(handlers, handler)
-
 		case data, ok := <-in:
 			if !ok {
-				out <- Result[T]{
-					Data: data,
-					OK:   false,
-					Err:  nil,
-				}
+				out <- ph.result(data, false, nil)
 				continue
 			}
-
-			notifier := make(chan Result[T])
-			ctx, cancel := context.WithTimeout(ph.options.Ctx, ph.options.Timeout)
-
-			go ph.executeHandlers(ctx, handlers, data, notifier)
-
+			receiver := ph.pool.Get().(chan Result[T])
+			timer := time.NewTimer(ph.options.Timeout)
+			go ph.executeHandlers(ctx, handlers, data, receiver)
 			select {
-			case result := <-notifier:
-				cancel()
-				out <- result
-			case <-ctx.Done():
-				cancel()
-				out <- Result[T]{
-					Data: data,
-					OK:   ok,
-					Err:  timeoutError(),
+			case <-timer.C:
+				timer.Stop()
+				if ph.options.ErrTimeoutFunc != nil {
+					data = ph.options.ErrTimeoutFunc(ctx, data).(T)
 				}
+				out <- ph.result(data, true, timeoutError())
+			case res := <-receiver:
+				timer.Stop()
+				out <- res
+			case <-ctx.Done():
+				timer.Stop()
+				if ph.options.ErrDoneFunc != nil {
+					data = ph.options.ErrDoneFunc(ctx, data, ctx.Err()).(T)
+				}
+				out <- ph.result(data, true, ctxError(ctx.Err()))
 			}
 		}
 	}
@@ -111,18 +111,28 @@ func (ph *Phos[T]) executeHandlers(ctx context.Context, handlers []Handler[T], d
 			if ph.options.ErrHandleFunc != nil {
 				data = ph.options.ErrHandleFunc(ctx, data, err).(T)
 			}
-			notifier <- Result[T]{
-				Data: data,
-				OK:   true,
-				Err:  handleError(err),
-			}
+			notifier <- ph.result(data, true, handleError(err))
+			ph.pool.Put(notifier)
 			return
 		}
 	}
+	notifier <- ph.result(data, true, nil)
+	ph.pool.Put(notifier)
+}
 
-	notifier <- Result[T]{
-		Data: data,
-		OK:   true,
-		Err:  nil,
+func (ph *Phos[T]) result(data T, ok bool, err *Error) Result[T] {
+	if ph.options.Zero && err != nil {
+		var zero T
+		return Result[T]{
+			Data: zero,
+			OK:   ok,
+			Err:  err,
+		}
+	} else {
+		return Result[T]{
+			Data: data,
+			OK:   ok,
+			Err:  err,
+		}
 	}
 }

@@ -60,6 +60,13 @@ func New[T any](opts ...Option) *Phos[T] {
 	return ph
 }
 
+// Close PHOS channel
+// Note: You should not close In channel manually before or after calling Close
+func (ph *Phos[T]) Close() {
+	close(ph.In)
+	close(ph.handlerChan)
+}
+
 // Append add handler for PHOS to execute
 func (ph *Phos[T]) Append(handlers ...Handler[T]) {
 	for _, handler := range handlers {
@@ -72,7 +79,10 @@ func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {
 	handlers := make([]Handler[T], 0)
 	for {
 		select {
-		case handler := <-ph.handlerChan:
+		case handler, ok := <-ph.handlerChan:
+			if !ok {
+				return
+			}
 			handlers = append(handlers, handler)
 		case data, ok := <-in:
 			if !ok {

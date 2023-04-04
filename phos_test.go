@@ -37,7 +37,7 @@ func TestSingleHandler(t *testing.T) {
 func TestClose(t *testing.T) {
 	ph := New[int]()
 	ph.Append(plusOne)
-	close(ph.In)
+	ph.Close()
 	res, ok := <-ph.Out
 	assert.True(t, ok)
 	assert.Equal(t, 0, res.Data)

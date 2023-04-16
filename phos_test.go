@@ -26,6 +26,7 @@ import (
 
 func TestSingleHandler(t *testing.T) {
 	ph := New[int]()
+	defer ph.Close()
 	ph.Append(plusOne)
 	ph.In <- 0
 	res := <-ph.Out
@@ -47,6 +48,7 @@ func TestClose(t *testing.T) {
 
 func TestMultiHandlers(t *testing.T) {
 	ph := New[int]()
+	defer ph.Close()
 	ph.Append(plusOne, plusOne, plusOne)
 	ph.In <- 1 // 1 + 1 + 1 + 1 = 4
 	ph.In <- 2 // 2 + 1 + 1 + 1 = 5
@@ -67,6 +69,7 @@ func TestMultiHandlers(t *testing.T) {
 
 func TestHandlersWithErr(t *testing.T) {
 	ph := New[int]()
+	defer ph.Close()
 	ph.Append(plusOne, plusOneWithErr, plusOne)
 	// Note:
 	// The last handler will not be executed because of the error
@@ -91,6 +94,7 @@ func TestHandlersWithZeroOption(t *testing.T) {
 	// Note:
 	// WithZero will make the result of the handler with error to be zero value of the type
 	ph := New[int](WithZero())
+	defer ph.Close()
 	ph.Append(plusOne, plusOneWithErr, plusOne)
 	ph.In <- 1
 	ph.In <- 2
@@ -113,6 +117,7 @@ func TestHandlersWithErrHandleFuncOption(t *testing.T) {
 	// Note:
 	// WithErrHandleFunc will make the result of the handler with error to be the return value of the errHandleFunc
 	ph := New[int](WithErrHandleFunc(plusSixSixSix))
+	defer ph.Close()
 	ph.Append(plusOne, plusOneWithErr, plusOne)
 	ph.In <- 1 // 1 + 1 + 111 + 666 = 779
 	ph.In <- 2 // 2 + 1 + 111 + 666 = 780
@@ -137,6 +142,7 @@ func TestHandlersWithZeroAndErrHandleFuncOption(t *testing.T) {
 	// WithZero will overwrite the result of the WithErrHandleFunc option, that is,
 	// the outputs will be the zero value of the appropriate type when error occur
 	ph := New[int](WithZero(), WithErrHandleFunc(plusSixSixSix))
+	defer ph.Close()
 	ph.Append(plusOne, plusOneWithErr, plusOne)
 	ph.In <- 1
 	ph.In <- 2
@@ -158,6 +164,7 @@ func TestHandlersWithZeroAndErrHandleFuncOption(t *testing.T) {
 func TestHandlersWithTimeout(t *testing.T) {
 	// Note: Execution time should be around 9 second
 	ph := New[int]()
+	defer ph.Close()
 	ph.Append(plusOne, plusOneWithSleep, plusOne)
 	ph.In <- 10
 	ph.In <- 20
@@ -179,6 +186,7 @@ func TestHandlersWithTimeout(t *testing.T) {
 func TestHandlersWithTimeoutOption(t *testing.T) {
 	// Note: Execution time should be around 15 second
 	ph := New[int](WithTimeout(time.Second * 5))
+	defer ph.Close()
 	ph.Append(plusOne, plusOneWithSleep, plusOne)
 	ph.In <- 10
 	ph.In <- 20
@@ -200,6 +208,7 @@ func TestHandlersWithTimeoutOption(t *testing.T) {
 func TestHandlersWithErrTimeoutFuncOption(t *testing.T) {
 	// Note: Execution time should be around 9 second
 	ph := New[int](WithErrTimeoutFunc(plusFiveFiveFive))
+	defer ph.Close()
 	ph.Append(plusOne, plusOneWithSleep, plusOne)
 	ph.In <- 10 // 10 + 555 = 565
 	ph.In <- 20 // 20 + 555 = 575
@@ -223,6 +232,7 @@ func TestHandlersWithDoneFuncOption(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	defer cancel()
 	ph := New[int](WithContext(ctx), WithErrDoneFunc(plusSixSixSix))
+	defer ph.Close()
 	ph.Append(plusOne, plusOneWithSleep, plusOne)
 	ph.In <- 10 // 10 + 666 = 676
 	ph.In <- 20 // 20 + 666 = 686

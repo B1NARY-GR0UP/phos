@@ -32,6 +32,7 @@ type Phos[T any] struct {
 }
 
 // Handler handles the data of PHOS channel
+// TODO: Support MapReduce Handlers
 type Handler[T any] func(ctx context.Context, data T) (T, error)
 
 // Result PHOS output result

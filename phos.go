@@ -24,15 +24,16 @@ import (
 // Phos short for Phosphophyllite
 // PHOS is a channel with internal handler chain
 type Phos[T any] struct {
-	In          chan<- T
-	Out         <-chan Result[T]
-	handlerChan chan Handler[T]
-	pool        sync.Pool
-	options     *Options
+	In         chan<- T
+	Out        <-chan Result[T]
+	handlers   []Handler[T]
+	pool       sync.Pool
+	options    *Options
+	appendChan chan Handler[T]
+	removeChan chan int
 }
 
 // Handler handles the data of PHOS channel
-// TODO: Support MapReduce Handlers
 type Handler[T any] func(ctx context.Context, data T) (T, error)
 
 // Result PHOS output result
@@ -49,10 +50,12 @@ func New[T any](opts ...Option) *Phos[T] {
 	in := make(chan T, 1)
 	out := make(chan Result[T], 1)
 	ph := &Phos[T]{
-		In:          in,
-		Out:         out,
-		handlerChan: make(chan Handler[T]),
-		options:     options,
+		In:         in,
+		Out:        out,
+		handlers:   make([]Handler[T], 0),
+		options:    options,
+		appendChan: make(chan Handler[T]),
+		removeChan: make(chan int),
 	}
 	ph.pool.New = func() any {
 		return make(chan Result[T])
@@ -65,26 +68,48 @@ func New[T any](opts ...Option) *Phos[T] {
 // Note: You should not close In channel manually before or after calling Close
 func (ph *Phos[T]) Close() {
 	close(ph.In)
-	close(ph.handlerChan)
+	close(ph.appendChan)
+	close(ph.removeChan)
+}
+
+// Len return the number of handlers
+// Note: This method is not concurrency safe
+// A recommended way to use this method is to call it before calling Remove
+// e.g. ph.Remove(ph.Len() - 1)
+func (ph *Phos[T]) Len() int {
+	return len(ph.handlers)
 }
 
 // Append add handler for PHOS to execute
 func (ph *Phos[T]) Append(handlers ...Handler[T]) {
 	for _, handler := range handlers {
-		ph.handlerChan <- handler
+		ph.appendChan <- handler
 	}
+}
+
+// Remove remove handler from PHOS
+func (ph *Phos[T]) Remove(index int) {
+	ph.removeChan <- index
 }
 
 func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {
 	ctx := ph.options.Ctx
-	handlers := make([]Handler[T], 0)
 	for {
 		select {
-		case handler, ok := <-ph.handlerChan:
+		case handler, ok := <-ph.appendChan:
 			if !ok {
 				return
 			}
-			handlers = append(handlers, handler)
+			ph.handlers = append(ph.handlers, handler)
+		case index, ok := <-ph.removeChan:
+			if !ok {
+				return
+			}
+			if index < 0 || index > len(ph.handlers)-1 {
+				continue
+			}
+			copy(ph.handlers[index:], ph.handlers[index+1:])
+			ph.handlers = ph.handlers[:len(ph.handlers)-1]
 		case data, ok := <-in:
 			if !ok {
 				out <- ph.result(data, false, nil)
@@ -92,7 +117,7 @@ func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {
 			}
 			receiver := ph.pool.Get().(chan Result[T])
 			timer := time.NewTimer(ph.options.Timeout)
-			go ph.executeHandlers(ctx, handlers, data, receiver)
+			go ph.executeHandlers(ctx, data, receiver)
 			select {
 			case <-timer.C:
 				timer.Stop()
@@ -114,21 +139,21 @@ func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {
 	}
 }
 
-func (ph *Phos[T]) executeHandlers(ctx context.Context, handlers []Handler[T], data T, notifier chan Result[T]) {
+func (ph *Phos[T]) executeHandlers(ctx context.Context, data T, receiver chan Result[T]) {
 	var err error
-	for _, handler := range handlers {
+	for _, handler := range ph.handlers {
 		data, err = handler(ctx, data)
 		if err != nil {
 			if ph.options.ErrHandleFunc != nil {
 				data = ph.options.ErrHandleFunc(ctx, data, err).(T)
 			}
-			notifier <- ph.result(data, true, handleError(err))
-			ph.pool.Put(notifier)
+			receiver <- ph.result(data, true, handleError(err))
+			ph.pool.Put(receiver)
 			return
 		}
 	}
-	notifier <- ph.result(data, true, nil)
-	ph.pool.Put(notifier)
+	receiver <- ph.result(data, true, nil)
+	ph.pool.Put(receiver)
 }
 
 func (ph *Phos[T]) result(data T, ok bool, err *Error) Result[T] {

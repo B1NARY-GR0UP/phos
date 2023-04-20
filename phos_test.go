@@ -251,8 +251,66 @@ func TestHandlersWithDoneFuncOption(t *testing.T) {
 	assert.Equal(t, "context deadline exceeded", res3.Err.Error())
 }
 
+func TestLen(t *testing.T) {
+	ph := New[int]()
+	defer ph.Close()
+	ph.Append(plusOne, plusOne, plusThree)
+	ph.In <- 10 // 10 + 1 + 1 + 3 = 15
+	res := <-ph.Out
+	assert.Equal(t, 15, res.Data)
+	assert.True(t, res.OK)
+	assert.Nil(t, res.Err)
+	ph.Remove(ph.Len() - 1)
+	ph.In <- 20 // 20 + 1 + 1 = 22
+	res = <-ph.Out
+	assert.Equal(t, 22, res.Data)
+	assert.True(t, res.OK)
+	assert.Nil(t, res.Err)
+}
+
+func TestRemove(t *testing.T) {
+	ph := New[int]()
+	defer ph.Close()
+	ph.Append(plusOne, plusThree, plusOne)
+	ph.In <- 10 // 10 + 1 + 3 + 1 = 15
+	ph.In <- 20 // 20 + 1 + 3 + 1 = 25
+	ph.In <- 30 // 30 + 1 + 3 + 1 = 35
+	res1 := <-ph.Out
+	res2 := <-ph.Out
+	res3 := <-ph.Out
+	assert.Equal(t, 15, res1.Data)
+	assert.Equal(t, 25, res2.Data)
+	assert.Equal(t, 35, res3.Data)
+	assert.True(t, res1.OK)
+	assert.True(t, res2.OK)
+	assert.True(t, res3.OK)
+	assert.Nil(t, res1.Err)
+	assert.Nil(t, res2.Err)
+	assert.Nil(t, res3.Err)
+	ph.Remove(1)
+	ph.In <- 10 // 10 + 1 + 1 = 12
+	ph.In <- 20 // 20 + 1 + 1 = 22
+	ph.In <- 30 // 30 + 1 + 1 = 32
+	res1 = <-ph.Out
+	res2 = <-ph.Out
+	res3 = <-ph.Out
+	assert.Equal(t, 12, res1.Data)
+	assert.Equal(t, 22, res2.Data)
+	assert.Equal(t, 32, res3.Data)
+	assert.True(t, res1.OK)
+	assert.True(t, res2.OK)
+	assert.True(t, res3.OK)
+	assert.Nil(t, res1.Err)
+	assert.Nil(t, res2.Err)
+	assert.Nil(t, res3.Err)
+}
+
 func plusOne(_ context.Context, data int) (int, error) {
 	return data + 1, nil
+}
+
+func plusThree(_ context.Context, data int) (int, error) {
+	return data + 3, nil
 }
 
 func plusOneWithErr(_ context.Context, data int) (int, error) {

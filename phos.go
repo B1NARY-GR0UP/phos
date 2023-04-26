@@ -117,7 +117,7 @@ func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {
 			}
 			receiver := ph.pool.Get().(chan Result[T])
 			timer := time.NewTimer(ph.options.Timeout)
-			go ph.executeHandlers(ctx, data, receiver)
+			go ph.doHandle(ctx, data, receiver)
 			select {
 			case <-timer.C:
 				timer.Stop()
@@ -139,7 +139,7 @@ func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {
 	}
 }
 
-func (ph *Phos[T]) executeHandlers(ctx context.Context, data T, receiver chan Result[T]) {
+func (ph *Phos[T]) doHandle(ctx context.Context, data T, receiver chan Result[T]) {
 	var err error
 	for _, handler := range ph.handlers {
 		data, err = handler(ctx, data)

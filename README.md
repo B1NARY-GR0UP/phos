@@ -64,5 +64,5 @@ PHOS is distributed under the [Apache License 2.0](./LICENSE). The licenses of t
 <p align="center">
 <img src="https://github.com/justlorain/justlorain/blob/main/images/BINARY-WEB-ECO.png" alt="BINARY-WEB-ECO"/>
 <br/><br/>
-PHOS is a subproject of the <a href="https://github.com/B1NARY-GR0UP">BINARY WEB ECOLOGY</a>.
+PHOS is a Subproject of the <a href="https://github.com/B1NARY-GR0UP">BINARY WEB ECOLOGY</a>
 </p>

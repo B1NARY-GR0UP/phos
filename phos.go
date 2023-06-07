@@ -24,11 +24,15 @@ import (
 // Phos short for Phosphophyllite
 // PHOS is a channel with internal handler chain
 type Phos[T any] struct {
-	In         chan<- T
-	Out        <-chan Result[T]
+	options *Options
+
+	In  chan<- T
+	Out <-chan Result[T]
+
+	pool sync.Pool
+	once sync.Once
+
 	handlers   []Handler[T]
-	pool       sync.Pool
-	options    *Options
 	appendChan chan Handler[T]
 	removeChan chan int
 }
@@ -67,9 +71,11 @@ func New[T any](opts ...Option) *Phos[T] {
 // Close PHOS channel
 // Note: You should not close In channel manually before or after calling Close
 func (ph *Phos[T]) Close() {
-	close(ph.In)
-	close(ph.appendChan)
-	close(ph.removeChan)
+	ph.once.Do(func() {
+		close(ph.In)
+		close(ph.appendChan)
+		close(ph.removeChan)
+	})
 }
 
 // Len return the number of handlers

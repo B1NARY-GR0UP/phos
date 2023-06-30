@@ -32,9 +32,9 @@ type Phos[T any] struct {
 	pool sync.Pool
 	once sync.Once
 
-	handlers   []Handler[T]
-	appendChan chan Handler[T]
-	removeChan chan int
+	handlers []Handler[T]
+	appendC  chan Handler[T]
+	removeC  chan int
 }
 
 // Handler handles the data of PHOS channel
@@ -55,12 +55,12 @@ func New[T any](opts ...Option) *Phos[T] {
 	in := make(chan T, 1)
 	out := make(chan Result[T], 1)
 	ph := &Phos[T]{
-		In:         in,
-		Out:        out,
-		handlers:   make([]Handler[T], 0),
-		options:    options,
-		appendChan: make(chan Handler[T]),
-		removeChan: make(chan int),
+		In:       in,
+		Out:      out,
+		handlers: make([]Handler[T], 0),
+		options:  options,
+		appendC:  make(chan Handler[T]),
+		removeC:  make(chan int),
 	}
 	ph.pool.New = func() any {
 		return make(chan Result[T])
@@ -74,8 +74,8 @@ func New[T any](opts ...Option) *Phos[T] {
 func (ph *Phos[T]) Close() {
 	ph.once.Do(func() {
 		close(ph.In)
-		close(ph.appendChan)
-		close(ph.removeChan)
+		close(ph.appendC)
+		close(ph.removeC)
 	})
 }
 
@@ -90,13 +90,13 @@ func (ph *Phos[T]) Len() int {
 // Append add handler for PHOS to execute
 func (ph *Phos[T]) Append(handlers ...Handler[T]) {
 	for _, handler := range handlers {
-		ph.appendChan <- handler
+		ph.appendC <- handler
 	}
 }
 
 // Remove remove handler from PHOS
 func (ph *Phos[T]) Remove(index int) {
-	ph.removeChan <- index
+	ph.removeC <- index
 }
 
 // Pause PHOS execution
@@ -108,12 +108,12 @@ func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {
 	ctx := ph.options.Ctx
 	for {
 		select {
-		case handler, ok := <-ph.appendChan:
+		case handler, ok := <-ph.appendC:
 			if !ok {
 				return
 			}
 			ph.handlers = append(ph.handlers, handler)
-		case index, ok := <-ph.removeChan:
+		case index, ok := <-ph.removeC:
 			if !ok {
 				return
 			}

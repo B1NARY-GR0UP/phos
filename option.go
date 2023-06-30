@@ -23,7 +23,7 @@ import (
 var defaultOptions = Options{
 	Ctx:            context.Background(),
 	Zero:           false,
-	Timeout:        time.Second * 3,
+	Timeout:        3 * time.Second,
 	ErrHandleFunc:  nil,
 	ErrTimeoutFunc: nil,
 	ErrDoneFunc:    nil,
@@ -42,6 +42,7 @@ type Options struct {
 	ErrDoneFunc    ErrDoneFunc
 }
 
+// TODO: remove useless context
 type (
 	ErrHandleFunc  func(ctx context.Context, data any, err error) any
 	ErrTimeoutFunc func(ctx context.Context, data any) any

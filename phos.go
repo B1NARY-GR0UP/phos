@@ -38,6 +38,7 @@ type Phos[T any] struct {
 }
 
 // Handler handles the data of PHOS channel
+// TODO: remove context
 type Handler[T any] func(ctx context.Context, data T) (T, error)
 
 // Result PHOS output result
@@ -98,6 +99,11 @@ func (ph *Phos[T]) Remove(index int) {
 	ph.removeChan <- index
 }
 
+// Pause PHOS execution
+func (ph *Phos[T]) Pause(ctx context.Context) {
+	// TODO: implement me
+}
+
 func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {
 	ctx := ph.options.Ctx
 	for {
@@ -119,7 +125,7 @@ func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {
 		case data, ok := <-in:
 			if !ok {
 				out <- ph.result(data, false, nil)
-				continue
+				return
 			}
 			receiver := ph.pool.Get().(chan Result[T])
 			timer := time.NewTimer(ph.options.Timeout)
@@ -146,6 +152,7 @@ func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {
 }
 
 func (ph *Phos[T]) doHandle(ctx context.Context, data T, receiver chan Result[T]) {
+	// TODO: 超时后没有正确释放 goroutine，是不是应该把超时逻辑放在这里
 	var err error
 	for _, handler := range ph.handlers {
 		data, err = handler(ctx, data)
@@ -153,7 +160,7 @@ func (ph *Phos[T]) doHandle(ctx context.Context, data T, receiver chan Result[T]
 			if ph.options.ErrHandleFunc != nil {
 				data = ph.options.ErrHandleFunc(ctx, data, err).(T)
 			}
-			receiver <- ph.result(data, true, handleError(err))
+			receiver <- ph.result(data, true, handlerError(err))
 			ph.pool.Put(receiver)
 			return
 		}

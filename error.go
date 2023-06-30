@@ -37,7 +37,7 @@ type ErrorType uint64
 const (
 	_ ErrorType = iota
 	TimeoutErr
-	HandleErr
+	HandlerErr
 	CtxErr
 )
 
@@ -52,8 +52,8 @@ func timeoutError() *Error {
 	return newError(errors.New("phos error timeout"), TimeoutErr)
 }
 
-func handleError(err error) *Error {
-	return newError(err, HandleErr)
+func handlerError(err error) *Error {
+	return newError(err, HandlerErr)
 }
 
 func ctxError(err error) *Error {

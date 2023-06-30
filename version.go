@@ -16,6 +16,7 @@
 package phos
 
 // BINARY-PHOS
+// TODO: release v0.3.0
 const (
 	Name    = "PHOS"
 	Version = "v0.2.2"

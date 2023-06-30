@@ -46,7 +46,7 @@ func main() {
 |----------------------|------------------------|--------------------------------------------------------------------------------------|-------------------------|
 | `WithContext`        | `context.Background()` | Set context for PHOS                                                                 | [example](phos_test.go) |
 | `WithZero`           | `false`                | Set zero value for return when error happened                                        | [example](phos_test.go) |
-| `WithTimeout`        | `time.Second * 3`      | Set timeout for handlers execution                                                   | [example](phos_test.go) |
+| `WithTimeout`        | `3 * time.Second`      | Set timeout for handlers execution                                                   | [example](phos_test.go) |
 | `WithErrHandleFunc`  | `nil`                  | Set error handle function for PHOS which will be called when handle error happened   | [example](phos_test.go) |
 | `WithErrTimeoutFunc` | `nil`                  | Set error timeout function for PHOS which will be called when timeout error happened | [example](phos_test.go) |
 | `WithErrDoneFunc`    | `nil`                  | Set err done function for PHOS which will be called when context done happened       | [example](phos_test.go) |

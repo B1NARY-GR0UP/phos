@@ -28,8 +28,8 @@ func TestNewError(t *testing.T) {
 	assert.Equal(t, TimeoutErr, timeoutErr.Type)
 	assert.Equal(t, "phos error timeout", timeoutErr.Err.Error())
 	// HandleError
-	handleErr := handleError(errors.New("handle error"))
-	assert.Equal(t, HandleErr, handleErr.Type)
+	handleErr := handlerError(errors.New("handle error"))
+	assert.Equal(t, HandlerErr, handleErr.Type)
 	assert.Equal(t, "handle error", handleErr.Err.Error())
 	// CtxError
 	ctxErr := ctxError(errors.New("ctx error"))

@@ -194,8 +194,8 @@ func TestHandlersWithTimeout(t *testing.T) {
 
 func TestHandlersWithTimeoutOption(t *testing.T) {
 	defer goleak.VerifyNone(t)
-	// Note: Execution time should be around 15 second
-	ph := New[int](WithTimeout(time.Second * 5))
+	// Note: Execution time should be around 3 second
+	ph := New[int](WithTimeout(1 * time.Second))
 	defer ph.Close()
 	ph.Append(plusOne, plusOneWithSleep, plusOne)
 	ph.In <- 10

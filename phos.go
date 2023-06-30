@@ -24,17 +24,21 @@ import (
 // Phos short for Phosphophyllite
 // PHOS is a channel with internal handler chain
 type Phos[T any] struct {
-	options *Options
-
 	In  chan<- T
 	Out <-chan Result[T]
 
-	pool sync.Pool
-	once sync.Once
-
 	handlers []Handler[T]
+
+	options *Options
+
+	once sync.Once
+	mu   sync.RWMutex
+	wg   sync.WaitGroup
+
 	appendC  chan Handler[T]
 	removeC  chan int
+	receiveC chan Result[T]
+	closeC   chan struct{}
 }
 
 // Handler handles the data of PHOS channel
@@ -55,15 +59,14 @@ func New[T any](opts ...Option) *Phos[T] {
 	in := make(chan T, 1)
 	out := make(chan Result[T], 1)
 	ph := &Phos[T]{
+		options:  options,
 		In:       in,
 		Out:      out,
 		handlers: make([]Handler[T], 0),
-		options:  options,
 		appendC:  make(chan Handler[T]),
 		removeC:  make(chan int),
-	}
-	ph.pool.New = func() any {
-		return make(chan Result[T])
+		receiveC: make(chan Result[T]),
+		closeC:   make(chan struct{}),
 	}
 	go ph.handle(in, out)
 	return ph
@@ -76,14 +79,15 @@ func (ph *Phos[T]) Close() {
 		close(ph.In)
 		close(ph.appendC)
 		close(ph.removeC)
+		<-ph.closeC
+		close(ph.receiveC)
 	})
 }
 
 // Len return the number of handlers
-// Note: This method is not concurrency safe
-// A recommended way to use this method is to call it before calling Remove
-// e.g. ph.Remove(ph.Len() - 1)
 func (ph *Phos[T]) Len() int {
+	ph.mu.RLock()
+	defer ph.mu.RUnlock()
 	return len(ph.handlers)
 }
 
@@ -102,20 +106,23 @@ func (ph *Phos[T]) Remove(index int) {
 // Pause PHOS execution
 func (ph *Phos[T]) Pause(ctx context.Context) {
 	// TODO: implement me
+	panic("implement me")
 }
 
 func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {
+	defer close(ph.closeC)
 	ctx := ph.options.Ctx
+LOOP:
 	for {
 		select {
 		case handler, ok := <-ph.appendC:
 			if !ok {
-				return
+				break LOOP
 			}
 			ph.handlers = append(ph.handlers, handler)
 		case index, ok := <-ph.removeC:
 			if !ok {
-				return
+				break LOOP
 			}
 			if index < 0 || index > len(ph.handlers)-1 {
 				continue
@@ -125,11 +132,10 @@ func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {
 		case data, ok := <-in:
 			if !ok {
 				out <- ph.result(data, false, nil)
-				return
+				break LOOP
 			}
-			receiver := ph.pool.Get().(chan Result[T])
 			timer := time.NewTimer(ph.options.Timeout)
-			go ph.doHandle(ctx, data, receiver)
+			go ph.doHandle(ctx, data)
 			select {
 			case <-timer.C:
 				timer.Stop()
@@ -137,8 +143,11 @@ func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {
 					data = ph.options.ErrTimeoutFunc(ctx, data).(T)
 				}
 				out <- ph.result(data, true, timeoutError())
-			case res := <-receiver:
+			case res, ok := <-ph.receiveC:
 				timer.Stop()
+				if !ok {
+					break LOOP
+				}
 				out <- res
 			case <-ctx.Done():
 				timer.Stop()
@@ -149,10 +158,22 @@ func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {
 			}
 		}
 	}
+	ph.wg.Wait()
 }
 
-func (ph *Phos[T]) doHandle(ctx context.Context, data T, receiver chan Result[T]) {
-	// TODO: 超时后没有正确释放 goroutine，是不是应该把超时逻辑放在这里
+func (ph *Phos[T]) doHandle(ctx context.Context, data T) {
+	past := time.Now()
+	launch := func(err *Error) {
+		if time.Now().After(past.Add(ph.options.Timeout)) {
+			return
+		}
+		select {
+		case ph.receiveC <- ph.result(data, true, err):
+		default:
+		}
+	}
+	ph.wg.Add(1)
+	defer ph.wg.Done()
 	var err error
 	for _, handler := range ph.handlers {
 		data, err = handler(ctx, data)
@@ -160,13 +181,11 @@ func (ph *Phos[T]) doHandle(ctx context.Context, data T, receiver chan Result[T]
 			if ph.options.ErrHandleFunc != nil {
 				data = ph.options.ErrHandleFunc(ctx, data, err).(T)
 			}
-			receiver <- ph.result(data, true, handlerError(err))
-			ph.pool.Put(receiver)
+			launch(handlerError(err))
 			return
 		}
 	}
-	receiver <- ph.result(data, true, nil)
-	ph.pool.Put(receiver)
+	launch(nil)
 }
 
 func (ph *Phos[T]) result(data T, ok bool, err *Error) Result[T] {

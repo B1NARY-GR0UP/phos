@@ -82,7 +82,7 @@ func WithZero() Option {
 	}
 }
 
-// WithTimeout will set timeout for handlers execution
+// WithTimeout will set timeout for the handler chain execution (not just for each handler)
 func WithTimeout(timeout time.Duration) Option {
 	return func(o *Options) {
 		o.Timeout = timeout

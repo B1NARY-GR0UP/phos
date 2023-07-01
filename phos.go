@@ -42,7 +42,6 @@ type Phos[T any] struct {
 }
 
 // Handler handles the data of PHOS channel
-// TODO: remove context
 type Handler[T any] func(ctx context.Context, data T) (T, error)
 
 // Result PHOS output result
@@ -101,12 +100,6 @@ func (ph *Phos[T]) Append(handlers ...Handler[T]) {
 // Remove remove handler from PHOS
 func (ph *Phos[T]) Remove(index int) {
 	ph.removeC <- index
-}
-
-// Pause PHOS execution
-func (ph *Phos[T]) Pause(ctx context.Context) {
-	// TODO: implement me
-	panic("implement me")
 }
 
 func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {

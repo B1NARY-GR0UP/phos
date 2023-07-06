@@ -128,7 +128,8 @@ LOOP:
 				break LOOP
 			}
 			timer := time.NewTimer(ph.options.Timeout)
-			go ph.doHandle(ctx, data)
+			now := time.Now()
+			go ph.doHandle(ctx, data, now)
 			select {
 			case <-timer.C:
 				timer.Stop()
@@ -154,8 +155,7 @@ LOOP:
 	ph.wg.Wait()
 }
 
-func (ph *Phos[T]) doHandle(ctx context.Context, data T) {
-	past := time.Now()
+func (ph *Phos[T]) doHandle(ctx context.Context, data T, past time.Time) {
 	launch := func(err *Error) {
 		if time.Now().After(past.Add(ph.options.Timeout)) {
 			return

@@ -171,7 +171,6 @@ func TestHandlersWithZeroAndErrHandleFuncOption(t *testing.T) {
 
 func TestHandlersWithTimeout(t *testing.T) {
 	defer goleak.VerifyNone(t)
-	// Note: Execution time should be around 9 （default timeout * 3） second
 	ph := New[int]()
 	defer ph.Close()
 	ph.Append(plusOne, plusOneWithSleep, plusOne)
@@ -194,7 +193,6 @@ func TestHandlersWithTimeout(t *testing.T) {
 
 func TestHandlersWithTimeoutOption(t *testing.T) {
 	defer goleak.VerifyNone(t)
-	// Note: Execution time should be around 3 second
 	ph := New[int](WithTimeout(1 * time.Second))
 	defer ph.Close()
 	ph.Append(plusOne, plusOneWithSleep, plusOne)
@@ -217,7 +215,6 @@ func TestHandlersWithTimeoutOption(t *testing.T) {
 
 func TestHandlersWithErrTimeoutFuncOption(t *testing.T) {
 	defer goleak.VerifyNone(t)
-	// Note: Execution time should be around 9 second
 	ph := New[int](WithErrTimeoutFunc(plusFiveFiveFive))
 	defer ph.Close()
 	ph.Append(plusOne, plusOneWithSleep, plusOne)
@@ -240,8 +237,7 @@ func TestHandlersWithErrTimeoutFuncOption(t *testing.T) {
 
 func TestHandlersWithDoneFuncOption(t *testing.T) {
 	defer goleak.VerifyNone(t)
-	// Note: Execution time should be around 1 second
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	ph := New[int](WithContext(ctx), WithErrDoneFunc(plusSixSixSix))
 	defer ph.Close()

@@ -189,11 +189,10 @@ func (ph *Phos[T]) result(data T, ok bool, err *Error) Result[T] {
 			OK:   ok,
 			Err:  err,
 		}
-	} else {
-		return Result[T]{
-			Data: data,
-			OK:   ok,
-			Err:  err,
-		}
+	}
+	return Result[T]{
+		Data: data,
+		OK:   ok,
+		Err:  err,
 	}
 }

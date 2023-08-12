@@ -1,9 +1,9 @@
 module github.com/B1NARY-GR0UP/phos
 
-go 1.18
+go 1.21
 
 require (
-	github.com/stretchr/testify v1.8.2
+	github.com/stretchr/testify v1.8.4
 	go.uber.org/goleak v1.2.1
 )
 

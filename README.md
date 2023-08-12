@@ -36,7 +36,7 @@ func main() {
     ph.Append(hello)
     ph.In <- "BINARY"
     res := <-ph.Out
-    ph.Remove(ph.Len() - 1)
+    ph.Delete(ph.Len() - 1)
     fmt.Println(res.Data)
 }
 ```

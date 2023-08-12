@@ -37,7 +37,7 @@ type Phos[T any] struct {
 	wg   sync.WaitGroup
 
 	appendC  chan Handler[T]
-	removeC  chan int
+	deleteC  chan int
 	receiveC chan Result[T]
 	closeC   chan struct{}
 }
@@ -64,7 +64,7 @@ func New[T any](opts ...Option) *Phos[T] {
 		Out:      out,
 		handlers: make([]Handler[T], 0),
 		appendC:  make(chan Handler[T]),
-		removeC:  make(chan int),
+		deleteC:  make(chan int),
 		receiveC: make(chan Result[T]),
 		closeC:   make(chan struct{}),
 	}
@@ -78,7 +78,7 @@ func (ph *Phos[T]) Close() {
 	ph.once.Do(func() {
 		close(ph.In)
 		close(ph.appendC)
-		close(ph.removeC)
+		close(ph.deleteC)
 		<-ph.closeC
 		close(ph.receiveC)
 	})
@@ -98,9 +98,15 @@ func (ph *Phos[T]) Append(handlers ...Handler[T]) {
 	}
 }
 
-// Remove remove handler from PHOS
+// Delete handler according to the index
+func (ph *Phos[T]) Delete(index int) {
+	ph.deleteC <- index
+}
+
+// Remove handler from PHOS
+// Deprecated: use Delete instead
 func (ph *Phos[T]) Remove(index int) {
-	ph.removeC <- index
+	ph.Delete(index)
 }
 
 func (ph *Phos[T]) handle(in chan T, out chan Result[T]) {
@@ -114,7 +120,7 @@ LOOP:
 				break LOOP
 			}
 			ph.handlers = append(ph.handlers, handler)
-		case index, ok := <-ph.removeC:
+		case index, ok := <-ph.deleteC:
 			if !ok {
 				break LOOP
 			}

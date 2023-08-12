@@ -269,7 +269,7 @@ func TestLen(t *testing.T) {
 	assert.Equal(t, 15, res.Data)
 	assert.True(t, res.OK)
 	assert.Nil(t, res.Err)
-	ph.Remove(ph.Len() - 1)
+	ph.Delete(ph.Len() - 1)
 	ph.In <- 20 // 20 + 1 + 1 = 22
 	res = <-ph.Out
 	assert.Equal(t, 22, res.Data)
@@ -277,7 +277,7 @@ func TestLen(t *testing.T) {
 	assert.Nil(t, res.Err)
 }
 
-func TestRemove(t *testing.T) {
+func TestDelete(t *testing.T) {
 	defer goleak.VerifyNone(t)
 	ph := New[int]()
 	defer ph.Close()
@@ -297,7 +297,7 @@ func TestRemove(t *testing.T) {
 	assert.Nil(t, res1.Err)
 	assert.Nil(t, res2.Err)
 	assert.Nil(t, res3.Err)
-	ph.Remove(1)
+	ph.Delete(1)
 	ph.In <- 10 // 10 + 1 + 1 = 12
 	ph.In <- 20 // 20 + 1 + 1 = 22
 	ph.In <- 30 // 30 + 1 + 1 = 32

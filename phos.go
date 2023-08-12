@@ -17,6 +17,7 @@ package phos
 
 import (
 	"context"
+	"slices"
 	"sync"
 	"time"
 )
@@ -120,8 +121,7 @@ LOOP:
 			if index < 0 || index > len(ph.handlers)-1 {
 				continue
 			}
-			copy(ph.handlers[index:], ph.handlers[index+1:])
-			ph.handlers = ph.handlers[:len(ph.handlers)-1]
+			ph.handlers = slices.Delete(ph.handlers, index, index+1)
 		case data, ok := <-in:
 			if !ok {
 				out <- ph.result(data, false, nil)

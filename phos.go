@@ -189,9 +189,8 @@ func (ph *Phos[T]) doHandle(ctx context.Context, data T, past time.Time) {
 
 func (ph *Phos[T]) result(data T, ok bool, err *Error) Result[T] {
 	if ph.options.Zero && err != nil {
-		var zero T
 		return Result[T]{
-			Data: zero,
+			Data: *new(T),
 			OK:   ok,
 			Err:  err,
 		}

@@ -17,7 +17,6 @@ package phos
 
 import (
 	"context"
-	"fmt"
 	"slices"
 	"sync"
 	"time"
@@ -52,10 +51,6 @@ type Result[T any] struct {
 	// Note: You should use the OK of Result rather than the second return value of PHOS Out channel
 	OK  bool
 	Err *Error
-}
-
-func Hello() {
-	fmt.Println("hello phos")
 }
 
 // New PHOS channel

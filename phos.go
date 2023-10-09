@@ -43,7 +43,7 @@ type Phos[T any] struct {
 }
 
 // Handler handles the data of PHOS channel
-type Handler[T any] func(ctx context.Context, data T) (T, error)
+type Handler[T any] func(ctx context.Context, input T) (output T, err error)
 
 // Result PHOS output result
 type Result[T any] struct {

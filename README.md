@@ -20,24 +20,28 @@ go get github.com/B1NARY-GR0UP/phos
 package main
 
 import (
-    "context"
-    "fmt"
+	"context"
+	"fmt"
 
-    "github.com/B1NARY-GR0UP/phos"
+	"github.com/B1NARY-GR0UP/phos"
 )
 
 func hello(_ context.Context, data string) (string, error) {
-    return data + "-PHOS", nil
+	return data + " by ", nil
+}
+
+func world(_ context.Context, data string) (string, error) {
+	return data + "BINARY", nil
 }
 
 func main() {
-    ph := phos.New[string]()
-    defer ph.Close()
-    ph.Append(hello)
-    ph.In <- "BINARY"
-    res := <-ph.Out
-    ph.Delete(ph.Len() - 1)
-    fmt.Println(res.Data)
+	ph := phos.New[string]()
+	defer ph.Close()
+	ph.Append(hello, world)
+	ph.In <- "PHOS"
+	res := <-ph.Out
+	ph.Delete(ph.Len() - 2)
+	fmt.Println(res.Data) // PHOS by BINARY
 }
 ```
 

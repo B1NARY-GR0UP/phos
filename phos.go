@@ -54,6 +54,9 @@ type Result[T any] struct {
 }
 
 // New PHOS channel
+// TODO: support buffer channel
+// TODO: remove timeout, context
+// TODO: keep simple
 func New[T any](opts ...Option) *Phos[T] {
 	options := newOptions(opts...)
 	in := make(chan T, 1)
